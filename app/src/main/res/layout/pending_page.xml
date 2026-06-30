@@ -19,7 +19,7 @@
             android:layout_width="18dp"
             android:layout_height="18dp"
             android:src="@drawable/ic_question_mark"
-            android:tint="@color/heading_purple"
+            android:tint="@color/white"
             android:layout_marginEnd="8dp" />
 
         <TextView
@@ -27,7 +27,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="PENDING CLASSIFICATION"
-            android:textColor="@color/heading_purple"
+            android:textColor="@color/white"
             android:textStyle="bold"
             android:textSize="14sp"
             android:letterSpacing="0.06" />
@@ -130,13 +130,13 @@
                 android:layout_width="18dp"
                 android:layout_height="18dp"
                 android:src="@drawable/ic_question_mark"
-                android:tint="@color/heading_purple" />
+                android:tint="@color/white" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/nav_pending"
-                android:textColor="@color/heading_purple"
+                android:textColor="@color/white"
                 android:textSize="8sp"
                 android:textStyle="bold"
                 android:layout_marginTop="3dp" />

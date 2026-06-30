@@ -8,10 +8,6 @@
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/layout/item_pending_layout.xml"
     },
     {
-        "merged": "com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/layout_alerts_page.xml.flat",
-        "source": "com.atakmap.android.plugintemplate.plugin.app-main-8:/layout/alerts_page.xml"
-    },
-    {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_threat_dot_high.xml.flat",
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/threat_dot_high.xml"
     },
@@ -24,16 +20,8 @@
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/threat_dot_friendly.xml"
     },
     {
-        "merged": "com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_ic_question_mark.xml.flat",
-        "source": "com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/ic_question_mark.xml"
-    },
-    {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_ic_alert.xml.flat",
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/ic_alert.xml"
-    },
-    {
-        "merged": "com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/layout_pending_page.xml.flat",
-        "source": "com.atakmap.android.plugintemplate.plugin.app-main-8:/layout/pending_page.xml"
     },
     {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_threat_dot_critical.xml.flat",
@@ -44,8 +32,8 @@
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/layout/item_classification_result_layout.xml"
     },
     {
-        "merged": "com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/layout_item_alert_layout.xml.flat",
-        "source": "com.atakmap.android.plugintemplate.plugin.app-main-8:/layout/item_alert_layout.xml"
+        "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/layout_item_alert_layout.xml.flat",
+        "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/layout/item_alert_layout.xml"
     },
     {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_new_dark_button_bg.xml.flat",
@@ -80,20 +68,12 @@
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/xml/com_android_vending_archive_opt_out.xml"
     },
     {
-        "merged": "com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/layout_landing_page.xml.flat",
-        "source": "com.atakmap.android.plugintemplate.plugin.app-main-8:/layout/landing_page.xml"
-    },
-    {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_ic_drone.xml.flat",
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/ic_drone.xml"
     },
     {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/layout_landing_page.xml.flat",
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/layout/landing_page.xml"
-    },
-    {
-        "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/layout_main_layout.xml.flat",
-        "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/layout/main_layout.xml"
     },
     {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_ic_history.xml.flat",
@@ -108,12 +88,24 @@
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/layout/item_layout.xml"
     },
     {
+        "merged": "com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/layout_item_classification_result_layout.xml.flat",
+        "source": "com.atakmap.android.plugintemplate.plugin.app-main-8:/layout/item_classification_result_layout.xml"
+    },
+    {
+        "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_ic_question_mark.xml.flat",
+        "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/ic_question_mark.xml"
+    },
+    {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_ic_settings.xml.flat",
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/ic_settings.xml"
     },
     {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_new_dark_button_selected.xml.flat",
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/new_dark_button_selected.xml"
+    },
+    {
+        "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/layout_alerts_page.xml.flat",
+        "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/layout/alerts_page.xml"
     },
     {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/layout_pending_page.xml.flat",

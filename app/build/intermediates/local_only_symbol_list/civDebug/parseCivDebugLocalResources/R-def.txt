@@ -8,7 +8,6 @@ color cuas_surface
 color cuas_surface_alt
 color cuas_text_secondary
 color darker_gray
-color heading_purple
 color search_area_accent
 color search_area_active_bg
 color threat_critical

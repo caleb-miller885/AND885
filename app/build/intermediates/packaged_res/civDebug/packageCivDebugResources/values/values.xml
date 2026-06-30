@@ -11,7 +11,6 @@
     <color name="cuas_surface_alt">#161920</color>
     <color name="cuas_text_secondary">#7A8090</color>
     <color name="darker_gray">#121212</color>
-    <color name="heading_purple">#966FD6</color>
     <color name="search_area_accent">#4A9EFF</color>
     <color name="search_area_active_bg">#1A3A5C</color>
     <color name="threat_critical">#F44336</color>
@@ -24,7 +23,7 @@
     <dimen name="auto_margin">6dp</dimen>
     <dimen name="fontSize">14sp</dimen>
     <string name="app_desc">Classification and Tracking of UAS</string>
-    <string name="app_name">DEWC CUAS</string>
+    <string name="app_name">ARGUS CUAS</string>
     <string name="nav_alerts">ALERTS</string>
     <string name="nav_drones">DRONES</string>
     <string name="nav_pending">PENDING</string>
@@ -34,7 +33,7 @@
     <string name="search_area_active">ACTIVE SEARCH AREA</string>
     <string name="search_area_clear">CLEAR</string>
     <string name="search_area_define">DEFINE SEARCH AREA</string>
-    <string name="versionName" translatable="false">0.1 () - [5.7.0]</string>
+    <string name="versionName" translatable="false">0.1 (f3e88c83) - [5.7.0]</string>
     <style name="ATAKEditText" parent="@android:style/Widget.EditText">
         
         

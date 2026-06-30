@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- App -->
-    <string name="app_name">DEWC CUAS</string>
+    <string name="app_name">ARGUS CUAS</string>
     <!-- description -->
     <string name="app_desc">Classification and Tracking of UAS</string>
     <string name="no_uas_tracked">No UAS tracked</string>

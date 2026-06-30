@@ -3,7 +3,6 @@
 
     <color name="white">#ffffff</color>
     <color name="darker_gray">#121212</color>
-    <color name="heading_purple">#966FD6</color>
 
     <!-- Threat level traffic-light colors -->
     <color name="threat_minimal">#4CAF50</color>

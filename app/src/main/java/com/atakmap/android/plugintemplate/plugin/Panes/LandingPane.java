@@ -37,7 +37,7 @@ import java.util.Map;
 
 public class LandingPane {
 
-    private static final int COLOR_FILTER_LABEL     = Color.parseColor("#966FD6");
+    private static final int COLOR_FILTER_LABEL     = Color.WHITE;
     private static final int COLOR_SEARCH_ACCENT    = Color.parseColor("#4A9EFF");
     private static final int COLOR_SEARCH_ACTIVE_BG = Color.parseColor("#1A3A5C");
 

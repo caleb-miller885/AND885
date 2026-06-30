@@ -62,7 +62,7 @@
         android:text="SELECT"
         android:textSize="9sp"
         android:textStyle="bold"
-        android:textColor="@color/heading_purple"
+        android:textColor="@color/white"
         android:paddingStart="8dp"
         android:paddingEnd="8dp"
         android:paddingTop="5dp"
