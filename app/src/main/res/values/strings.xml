@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">DEWC CUAS</string>
+    <!-- description -->
+    <string name="app_desc">Classification and Tracking of UAS</string>
+    <string name="no_uas_tracked">No UAS tracked</string>
+    <string name="no_pending_uas">No pending UAS</string>
+
+    <!-- Search area -->
+    <string name="search_area_define">DEFINE SEARCH AREA</string>
+    <string name="search_area_active">ACTIVE SEARCH AREA</string>
+    <string name="search_area_clear">CLEAR</string>
+
+    <!-- Bottom nav -->
+    <string name="nav_drones">DRONES</string>
+    <string name="nav_alerts">ALERTS</string>
+    <string name="nav_pending">PENDING</string>
+    <string name="nav_settings">SETTINGS</string>
+
+    <string-array name="uas_filter_options">
+        <item>Active UAS</item>
+        <item>Require Classification</item>
+    </string-array>
+
+
+
+
+</resources>

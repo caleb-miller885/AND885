@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="38dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingStart="37dp"
+    android:paddingEnd="10dp">
+
+    <!-- Threat-level color dot (shape set programmatically) -->
+    <View
+        android:id="@+id/result_dot"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:layout_marginEnd="8dp" />
+
+    <!-- Classification medium -->
+    <TextView
+        android:id="@+id/tv_result_medium"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textColor="@android:color/white"
+        android:textSize="11sp" />
+
+    <!-- Threat level badge (background set programmatically) -->
+    <TextView
+        android:id="@+id/tv_result_threat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:paddingStart="5dp"
+        android:paddingEnd="5dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:layout_marginEnd="6dp" />
+
+    <!-- Type name (e.g. "DJI PHANTOM 4") -->
+    <TextView
+        android:id="@+id/tv_result_typename"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/white"
+        android:textSize="10sp"
+        android:layout_marginEnd="6dp" />
+
+    <!-- Confidence percentage -->
+    <TextView
+        android:id="@+id/tv_result_confidence"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/cuas_text_secondary"
+        android:textSize="10sp"
+        android:layout_marginEnd="8dp" />
+
+    <!-- SELECT button -->
+    <TextView
+        android:id="@+id/btn_select_result"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SELECT"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:textColor="@color/heading_purple"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp"
+        android:clickable="true"
+        android:focusable="true" />
+
+</LinearLayout>

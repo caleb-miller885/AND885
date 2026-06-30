@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="white">#ffffff</color>
+    <color name="darker_gray">#121212</color>
+    <color name="heading_purple">#966FD6</color>
+
+    <!-- Threat level traffic-light colors -->
+    <color name="threat_minimal">#4CAF50</color>
+    <color name="threat_high">#FFC107</color>
+    <color name="threat_critical">#F44336</color>
+
+    <!-- Threat classification colors -->
+    <color name="threat_friendly">#4CAF50</color>
+    <color name="threat_hostile">#F44336</color>
+    <color name="threat_unknown">#FFC107</color>
+
+    <!-- CUAS UI palette -->
+    <color name="cuas_bg_dark">#111318</color>
+    <color name="cuas_surface">#1C1F28</color>
+    <color name="cuas_surface_alt">#161920</color>
+    <color name="cuas_card_bg">#181B22</color>
+    <color name="cuas_divider">#2C2F3A</color>
+    <color name="cuas_text_secondary">#7A8090</color>
+
+    <!-- Search area accent (tactical blue) -->
+    <color name="search_area_accent">#4A9EFF</color>
+    <color name="search_area_active_bg">#1A3A5C</color>
+
+</resources>
