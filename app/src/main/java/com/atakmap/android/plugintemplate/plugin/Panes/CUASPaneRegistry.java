@@ -1,7 +1,6 @@
 package com.atakmap.android.plugintemplate.plugin.Panes;
 
 import android.content.Context;
-import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -25,6 +24,7 @@ public class CUASPaneRegistry implements ClassificationSelectionListener {
     private LandingPane landingPane;
     private PendingPane pendingPane;
     private AlertsPane  alertsPane;
+    private SensorsPane sensorsPane;
 
     public CUASPaneRegistry(IHostUIService uiService, Context pluginContext, CUASServiceRegistry services) {
         this.uiService     = uiService;
@@ -54,6 +54,12 @@ public class CUASPaneRegistry implements ClassificationSelectionListener {
         return alertsPane;
     }
 
+    private SensorsPane getSensorsPane() {
+        if (sensorsPane == null)
+            sensorsPane = new SensorsPane(pluginContext, this);
+        return sensorsPane;
+    }
+
     // ── Show panes ────────────────────────────────────────────────────────────
 
     public void showLandingPane() {
@@ -70,6 +76,12 @@ public class CUASPaneRegistry implements ClassificationSelectionListener {
 
     public void showAlertsPane() {
         Pane pane = getAlertsPane().getPane();
+        if (uiService != null && !uiService.isPaneVisible(pane))
+            uiService.showPane(pane, null);
+    }
+
+    public void showSensorsPane() {
+        Pane pane = getSensorsPane().getPane();
         if (uiService != null && !uiService.isPaneVisible(pane))
             uiService.showPane(pane, null);
     }
@@ -92,11 +104,18 @@ public class CUASPaneRegistry implements ClassificationSelectionListener {
         if (pendingPane  != null) pendingPane.removeItem(item);
     }
 
+    public void onSensorAdded(MapItem item) {
+        getSensorsPane().addOrUpdateItem(item);
+    }
+
+    public void onSensorRemoved(MapItem item) {
+        if (sensorsPane != null) sensorsPane.removeItem(item);
+    }
+
     // ── ClassificationSelectionListener ──────────────────────────────────────
 
     @Override
     public void onClassificationSelected(MapItem item, String serializedResult) {
-        // Parse type2525 from position 3 of the pipe-delimited result
         String[] parts  = serializedResult.split("\\|", 5);
         String type2525 = parts.length >= 4 ? parts[3] : null;
 
@@ -118,10 +137,9 @@ public class CUASPaneRegistry implements ClassificationSelectionListener {
             new SimpleDateFormat("HH:mm:ss", Locale.US);
 
     void onReclassificationRequired(MapItem item, String reason) {
-        // Always route through getLandingPane() so the instance is non-null
-        // and the pending summary section updates regardless of whether the pane is visible.
         getLandingPane().removeItem(item);
         getLandingPane().addOrUpdateItem(item);
+        getPendingPane().addOrUpdateItem(item);
         String ts = ALERT_TIME_FMT.format(new Date());
         String alertMsg = "[" + ts + "] " + item.getTitle() + ": reclassification required — " + reason;
         getAlertsPane().pushAlert(alertMsg, AlertsPane.SEVERITY_CRITICAL);
@@ -144,5 +162,6 @@ public class CUASPaneRegistry implements ClassificationSelectionListener {
         if (landingPane != null) { landingPane.clearItems(); landingPane = null; }
         if (pendingPane != null) { pendingPane.clearItems(); pendingPane = null; }
         if (alertsPane  != null) { alertsPane.clearItems();  alertsPane  = null; }
+        if (sensorsPane != null) { sensorsPane.clearItems(); sensorsPane = null; }
     }
 }

@@ -16,7 +16,9 @@
     <string name="nav_drones">DRONES</string>
     <string name="nav_alerts">ALERTS</string>
     <string name="nav_pending">PENDING</string>
+    <string name="nav_sensors">SENSORS</string>
     <string name="nav_settings">SETTINGS</string>
+    <string name="no_sensors">No sensors tracked</string>
 
     <string-array name="uas_filter_options">
         <item>Active UAS</item>

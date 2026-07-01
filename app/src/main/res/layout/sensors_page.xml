@@ -18,7 +18,7 @@
         <ImageView
             android:layout_width="18dp"
             android:layout_height="18dp"
-            android:src="@drawable/ic_alert"
+            android:src="@drawable/ic_sensor"
             android:tint="@color/white"
             android:layout_marginEnd="8dp" />
 
@@ -26,17 +26,17 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="SYSTEM ALERTS"
+            android:text="ACTIVE SENSORS"
             android:textColor="@color/white"
             android:textStyle="bold"
             android:textSize="14sp"
             android:letterSpacing="0.06" />
 
         <TextView
-            android:id="@+id/tv_alert_header_count"
+            android:id="@+id/tv_sensor_header_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="0 ALERTS"
+            android:text="0 SENSORS"
             android:textColor="@color/cuas_text_secondary"
             android:textSize="11sp"
             android:textStyle="bold" />
@@ -54,24 +54,23 @@
         android:layout_weight="1">
 
         <ScrollView
-            android:id="@+id/alerts_scroll"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:fadeScrollbars="false">
 
             <LinearLayout
-                android:id="@+id/alerts_list"
+                android:id="@+id/sensor_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
         </ScrollView>
 
         <TextView
-            android:id="@+id/tv_alerts_empty"
+            android:id="@+id/tv_sensors_empty"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
-            android:text="No alerts"
+            android:text="@string/no_sensors"
             android:textColor="@color/cuas_text_secondary"
             android:textSize="13sp"
             android:visibility="visible" />
@@ -143,36 +142,9 @@
                 android:layout_marginTop="3dp" />
         </LinearLayout>
 
-        <!-- SENSORS -->
+        <!-- SENSORS (active) -->
         <LinearLayout
             android:id="@+id/nav_sensors"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:clickable="true"
-            android:focusable="true">
-
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/ic_sensor"
-                android:tint="@color/cuas_text_secondary" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/nav_sensors"
-                android:textColor="@color/cuas_text_secondary"
-                android:textSize="8sp"
-                android:textStyle="bold"
-                android:layout_marginTop="3dp" />
-        </LinearLayout>
-
-        <!-- ALERTS (active) -->
-        <LinearLayout
-            android:id="@+id/nav_alerts"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -184,14 +156,41 @@
             <ImageView
                 android:layout_width="18dp"
                 android:layout_height="18dp"
-                android:src="@drawable/ic_alert"
+                android:src="@drawable/ic_sensor"
                 android:tint="@color/white" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/nav_alerts"
+                android:text="@string/nav_sensors"
                 android:textColor="@color/white"
+                android:textSize="8sp"
+                android:textStyle="bold"
+                android:layout_marginTop="3dp" />
+        </LinearLayout>
+
+        <!-- ALERTS -->
+        <LinearLayout
+            android:id="@+id/nav_alerts"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_alert"
+                android:tint="@color/cuas_text_secondary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/nav_alerts"
+                android:textColor="@color/cuas_text_secondary"
                 android:textSize="8sp"
                 android:textStyle="bold"
                 android:layout_marginTop="3dp" />

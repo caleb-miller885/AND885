@@ -6,6 +6,90 @@
                 {
                     "source": "/home/caleb/archive/EW PROJECTS/ATAK-CIV-5.7.0.0-SDK/plugins/CUAS/app/src/main/res/values/strings.xml",
                     "from": {
+                        "startLines": "-1,-1,-1,-1,-1,-1,18,-1,-1,20,-1,-1,-1,-1",
+                        "startColumns": "-1,-1,-1,-1,-1,-1,4,-1,-1,4,-1,-1,-1,-1",
+                        "startOffsets": "-1,-1,-1,-1,-1,-1,708,-1,-1,806,-1,-1,-1,-1",
+                        "endColumns": "-1,-1,-1,-1,-1,-1,47,-1,-1,57,-1,-1,-1,-1",
+                        "endOffsets": "-1,-1,-1,-1,-1,-1,751,-1,-1,859,-1,-1,-1,-1"
+                    },
+                    "to": {
+                        "startLines": "2,24,25,26,27,28,29,30,31,32,33,34,35,36",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "55,1059,1131,1179,1225,1271,1319,1367,1417,1475,1533,1591,1657,1709",
+                        "endLines": "5,24,25,26,27,28,29,30,31,32,33,34,35,36",
+                        "endColumns": "19,71,47,45,45,47,47,49,57,57,57,65,51,65",
+                        "endOffsets": "191,1126,1174,1220,1266,1314,1362,1412,1470,1528,1586,1652,1704,1770"
+                    }
+                },
+                {
+                    "source": "/home/caleb/archive/EW PROJECTS/ATAK-CIV-5.7.0.0-SDK/plugins/CUAS/app/src/main/res/values/dimen.xml",
+                    "from": {
+                        "startLines": "-1,-1",
+                        "startColumns": "-1,-1",
+                        "startOffsets": "-1,-1"
+                    },
+                    "to": {
+                        "startLines": "22,23",
+                        "startColumns": "4,4",
+                        "startOffsets": "977,1019",
+                        "endColumns": "41,39",
+                        "endOffsets": "1014,1054"
+                    }
+                },
+                {
+                    "source": "/home/caleb/archive/EW PROJECTS/ATAK-CIV-5.7.0.0-SDK/plugins/CUAS/app/src/main/res/values/colors.xml",
+                    "from": {
+                        "startLines": "-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1",
+                        "startColumns": "-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1",
+                        "startOffsets": "-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1"
+                    },
+                    "to": {
+                        "startLines": "6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "196,243,290,337,384,435,489,535,588,644,694,744,790,839,888,937",
+                        "endColumns": "46,46,46,46,50,53,45,52,55,49,49,45,48,48,48,39",
+                        "endOffsets": "238,285,332,379,430,484,530,583,639,689,739,785,834,883,932,972"
+                    }
+                },
+                {
+                    "source": "/home/caleb/archive/EW PROJECTS/ATAK-CIV-5.7.0.0-SDK/plugins/CUAS/app/build/generated/res/resValues/civ/debug/values/gradleResValues.xml",
+                    "from": {
+                        "startLines": "-1",
+                        "startColumns": "-1",
+                        "startOffsets": "-1"
+                    },
+                    "to": {
+                        "startLines": "37",
+                        "startColumns": "4",
+                        "startOffsets": "1775",
+                        "endColumns": "85",
+                        "endOffsets": "1856"
+                    }
+                },
+                {
+                    "source": "/home/caleb/archive/EW PROJECTS/ATAK-CIV-5.7.0.0-SDK/plugins/CUAS/app/src/main/res/values/styles.xml",
+                    "from": {
+                        "startLines": "-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1",
+                        "startColumns": "-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1",
+                        "startOffsets": "-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1"
+                    },
+                    "to": {
+                        "startLines": "38,45,55,58,61,68,82,85,93,98,101,112",
+                        "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
+                        "startOffsets": "1861,2038,2765,2903,3059,3432,3995,4078,4610,4886,5039,5627",
+                        "endLines": "44,54,57,60,67,81,84,92,97,100,111,116",
+                        "endColumns": "12,12,12,12,12,12,12,12,12,12,12,12",
+                        "endOffsets": "2033,2760,2898,3054,3427,3990,4073,4605,4881,5034,5622,5873"
+                    }
+                }
+            ]
+        },
+        {
+            "outputFile": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/values_values.arsc.flat",
+            "map": [
+                {
+                    "source": "/home/caleb/archive/EW PROJECTS/ATAK-CIV-5.7.0.0-SDK/plugins/CUAS/app/src/main/res/values/strings.xml",
+                    "from": {
                         "startLines": "20,5,3,16,15,17,18,7,6,11,12,10",
                         "startColumns": "4,4,4,4,4,4,4,4,4,4,4,4",
                         "startOffsets": "759,145,72,614,568,660,708,275,217,425,491,359",

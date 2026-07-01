@@ -9,6 +9,10 @@ public class Constants {
 
     // MapItem tag — set to any non-null value to mark an item as a CUAS UAS target
     public static final String UAS_ITEM = "dewcCuas.UasItem";
+    public static final String SENSOR_ITEM = "dewcCuas.SensorItem";
+    public static final String CUAS_SENSOR_COT_FILTER_TAG = "dewcCuas.sensorFilterTag";
+
+
 
     public static final String LOCATION_AMBIGUITY_UID = "dewcCuas.locationAmbiguityUID";
 

@@ -27,13 +27,15 @@
     <string name="nav_alerts">ALERTS</string>
     <string name="nav_drones">DRONES</string>
     <string name="nav_pending">PENDING</string>
+    <string name="nav_sensors">SENSORS</string>
     <string name="nav_settings">SETTINGS</string>
     <string name="no_pending_uas">No pending UAS</string>
+    <string name="no_sensors">No sensors tracked</string>
     <string name="no_uas_tracked">No UAS tracked</string>
     <string name="search_area_active">ACTIVE SEARCH AREA</string>
     <string name="search_area_clear">CLEAR</string>
     <string name="search_area_define">DEFINE SEARCH AREA</string>
-    <string name="versionName" translatable="false">0.1 (ec790828) - [5.7.0]</string>
+    <string name="versionName" translatable="false">0.1 (44d76831) - [5.7.0]</string>
     <style name="ATAKEditText" parent="@android:style/Widget.EditText">
         
         

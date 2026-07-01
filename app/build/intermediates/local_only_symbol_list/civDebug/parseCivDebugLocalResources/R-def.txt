@@ -27,6 +27,7 @@ drawable ic_history
 drawable ic_launcher
 drawable ic_question_mark
 drawable ic_search_area
+drawable ic_sensor
 drawable ic_settings
 drawable new_dark_button_bg
 drawable new_dark_button_disabled
@@ -47,6 +48,7 @@ id btn_search_area
 id btn_search_area_clear
 id btn_search_area_label
 id btn_select_result
+id btn_sensor_visibility
 id controls_panel
 id filter_all
 id filter_critical
@@ -56,6 +58,7 @@ id item_icon
 id nav_alerts
 id nav_drones
 id nav_pending
+id nav_sensors
 id nav_settings
 id pending_detail_list
 id pending_list
@@ -63,6 +66,7 @@ id pending_results_container
 id pending_section
 id result_dot
 id search_area_icon
+id sensor_list
 id threat_strip
 id tv_alert_header_count
 id tv_alert_message
@@ -85,6 +89,12 @@ id tv_result_confidence
 id tv_result_medium
 id tv_result_threat
 id tv_result_typename
+id tv_sensor_callsign
+id tv_sensor_fov
+id tv_sensor_header_count
+id tv_sensor_range
+id tv_sensor_type
+id tv_sensors_empty
 id tv_timestamp
 id tv_total_count
 id uas_list
@@ -93,15 +103,19 @@ layout item_alert_layout
 layout item_classification_result_layout
 layout item_layout
 layout item_pending_layout
+layout item_sensor_layout
 layout landing_page
 layout pending_page
+layout sensors_page
 string app_desc
 string app_name
 string nav_alerts
 string nav_drones
 string nav_pending
+string nav_sensors
 string nav_settings
 string no_pending_uas
+string no_sensors
 string no_uas_tracked
 string search_area_active
 string search_area_clear

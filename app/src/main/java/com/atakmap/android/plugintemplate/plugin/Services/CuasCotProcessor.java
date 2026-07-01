@@ -5,6 +5,7 @@ import static com.atakmap.android.plugintemplate.plugin.Constants.CLASSIFICATION
 import static com.atakmap.android.plugintemplate.plugin.Constants.CLASSIFICATION_RESULTS_COT_TAG;
 import static com.atakmap.android.plugintemplate.plugin.Constants.CUAS_COT_FIlTER_TAG;
 import static com.atakmap.android.plugintemplate.plugin.Constants.LOCATION_AMBIGUITY_UID;
+import static com.atakmap.android.plugintemplate.plugin.Constants.SENSOR_ITEM;
 import static com.atakmap.android.plugintemplate.plugin.Constants.SELECTED_CLASSIFICATION_RESULT;
 import static com.atakmap.android.plugintemplate.plugin.Constants.UAS_ITEM;
 import static com.atakmap.android.plugintemplate.plugin.Constants.LOCATION_AMBIGUITY_AREA;
@@ -24,20 +25,24 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
-import com.atakmap.android.plugintemplate.plugin.Constants;
 import com.atakmap.android.plugintemplate.plugin.Models.ClassificationResult;
 import com.atakmap.android.plugintemplate.plugin.Models.Effector;
+import com.atakmap.android.plugintemplate.plugin.Models.Sensor;
 import com.atakmap.android.user.PlacePointTool;
 import com.atakmap.android.util.Circle;
 import com.atakmap.comms.CommsMapComponent;
+import com.atakmap.comms.CotDispatcher;
 import com.atakmap.comms.ReportingRate;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class CuasCotProcessor {
@@ -53,6 +58,12 @@ public class CuasCotProcessor {
     private static final double RECLASSIFICATION_THRESHOLD = 0.10;
     private static final String TAG = "CUAS_PLUGIN";
     private static final String DELIMITER = "|";
+
+    private static final SimpleDateFormat COT_TIME_FMT;
+    static {
+        COT_TIME_FMT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        COT_TIME_FMT.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+    }
 
     private final Context pluginContext;
     private final MapGroup cuasGroup;
@@ -76,55 +87,59 @@ public class CuasCotProcessor {
 
             @Override
             public CommsMapComponent.ImportResult toItemMetadata(MapItem mapItem, CotEvent cotEvent, CotDetail cotDetail) {
-                if (cotDetail.getAttribute(UAS_ITEM) == null)
-                    return CommsMapComponent.ImportResult.SUCCESS;
-
-                //Set type override so every item is forced set to pending
-                mapItem.setType("a-p");
-                mv.getMapEventDispatcher().dispatch(
-                        new MapEvent.Builder(MapEvent.ITEM_REFRESH).setItem(mapItem).build());
-
-                Effector dto = cotToEffector(mapItem, cotEvent, cotDetail);
-                // Post so this runs after MarkerImporter's addToGroup completes.
-                // ingestDrone finds the item via rootGroup.deepFindUID and updates it in place.
-                mv.post(() -> ingestDrone(dto));
+                if (cotDetail.getAttribute(UAS_ITEM) != null) {
+                    mapItem.setType("a-p");
+                    mv.getMapEventDispatcher().dispatch(
+                            new MapEvent.Builder(MapEvent.ITEM_REFRESH).setItem(mapItem).build());
+                    Effector dto = cotToEffector(mapItem, cotEvent, cotDetail);
+                    mv.post(() -> ingestEffector(dto));
+                } else if (cotDetail.getAttribute(SENSOR_ITEM) != null) {
+                    mapItem.setMetaString(SENSOR_ITEM, "true");
+                }
                 return CommsMapComponent.ImportResult.SUCCESS;
             }
 
             @Override
             public boolean toCotDetail(MapItem mapItem, CotEvent cotEvent, CotDetail cotDetail) {
-                if (!mapItem.hasMetaValue(UAS_ITEM)) return true;
 
-                // All CUAS data goes inside the filter-tag wrapper so that
-                // toItemMetadata receives it as the named detail element.
-                CotDetail filterTag = new CotDetail(CUAS_COT_FIlTER_TAG);
-                filterTag.setAttribute(UAS_ITEM, mapItem.getMetaString(UAS_ITEM, ""));
-
-                ArrayList<String> classificationResults = mapItem.getMetaStringArrayList(CLASSIFICATION_RESULTS);
-                if (classificationResults != null && !classificationResults.isEmpty()) {
-                    CotDetail resultsWrapper = new CotDetail(CLASSIFICATION_RESULTS_COT_TAG);
-                    for (String entry : classificationResults) {
-                        String[] parts = entry.split("\\" + DELIMITER, 5);
-                        if (parts.length >= 3) {
-                            CotDetail r = new CotDetail(CLASSIFICATION_RESULT_COT_TAG);
-                            r.setAttribute("threatLevel",          parts[0]);
-                            r.setAttribute("classificationMedium", parts[1]);
-                            r.setAttribute("confidence",           parts[2]);
-                            r.setAttribute("type2525",  parts.length >= 4 ? parts[3] : "");
-                            r.setAttribute("typeName",  parts.length >= 5 ? parts[4] : "");
-                            resultsWrapper.addChild(r);
-                        }
-                    }
-                    filterTag.addChild(resultsWrapper);
+                if (mapItem.hasMetaValue(SENSOR_ITEM)) {
+                    CotDetail filterTag = new CotDetail(CUAS_COT_FIlTER_TAG);
+                    filterTag.setAttribute(SENSOR_ITEM, "true");
+                    cotDetail.addChild(filterTag);
+                    return true;
                 }
 
-                String selected = mapItem.getMetaString(SELECTED_CLASSIFICATION_RESULT, null);
-                if (selected != null)
-                    filterTag.setAttribute(SELECTED_CLASSIFICATION_RESULT, selected);
+                if(mapItem.hasMetaValue(UAS_ITEM)){
+                    CotDetail filterTag = new CotDetail(CUAS_COT_FIlTER_TAG);
+                    filterTag.setAttribute(UAS_ITEM, mapItem.getMetaString(UAS_ITEM, ""));
 
-                cotDetail.addChild(filterTag);
-                Log.d(TAG, "toCotDetail: exported CUAS detail for uid=" + mapItem.getUID());
-                return true;
+                    ArrayList<String> classificationResults = mapItem.getMetaStringArrayList(CLASSIFICATION_RESULTS);
+                    if (classificationResults != null && !classificationResults.isEmpty()) {
+                        CotDetail resultsWrapper = new CotDetail(CLASSIFICATION_RESULTS_COT_TAG);
+                        for (String entry : classificationResults) {
+                            String[] parts = entry.split("\\" + DELIMITER, 5);
+                            if (parts.length >= 3) {
+                                CotDetail r = new CotDetail(CLASSIFICATION_RESULT_COT_TAG);
+                                r.setAttribute("threatLevel",          parts[0]);
+                                r.setAttribute("classificationMedium", parts[1]);
+                                r.setAttribute("confidence",           parts[2]);
+                                r.setAttribute("type2525",  parts.length >= 4 ? parts[3] : "");
+                                r.setAttribute("typeName",  parts.length >= 5 ? parts[4] : "");
+                                resultsWrapper.addChild(r);
+                            }
+                        }
+                        filterTag.addChild(resultsWrapper);
+                    }
+
+                    String selected = mapItem.getMetaString(SELECTED_CLASSIFICATION_RESULT, null);
+                    if (selected != null)
+                        filterTag.setAttribute(SELECTED_CLASSIFICATION_RESULT, selected);
+
+                    cotDetail.addChild(filterTag);
+                    Log.d(TAG, "toCotDetail: exported CUAS detail for uid=" + mapItem.getUID());
+                    return true;
+                }
+                return false;
             }
         });
     }
@@ -139,7 +154,7 @@ public class CuasCotProcessor {
 
     // ── Public ingestion API ──────────────────────────────────────────────────
 
-    public void ingestDrone(Effector dto) {
+    public void ingestEffector(Effector dto) {
         if (cuasGroup == null) return;
 
         GeoPoint markerLocation = new GeoPoint(dto.lat, dto.lon, dto.altitudeMeters);
@@ -338,5 +353,49 @@ public class CuasCotProcessor {
     public void attachDetailtoSA(CotDetail detail) {
         CotMapComponent.getInstance().addAdditionalDetail(detail.getElementName(), detail);
         AtakBroadcast.getInstance().sendBroadcast(new Intent(ReportingRate.REPORT_LOCATION).putExtra("reason", "detail update"));
+    }
+
+    // ── Sensor ingestion ──────────────────────────────────────────────────────
+
+    public void ingestSensor(Sensor dto) {
+        if (mv.getRootGroup().deepFindUID(dto.uid) != null) return;
+
+        CotDispatcher dispatcher = CotMapComponent.getInternalDispatcher();
+        if (dispatcher == null) {
+            Log.e(TAG, "ingestSensor: internal dispatcher null");
+            return;
+        }
+        CotEvent event = CotEvent.parse(buildSensorCotXml(dto));
+        if (event == null || !event.isValid()) {
+            Log.e(TAG, "ingestSensor: invalid sensor COT for uid=" + dto.uid);
+            return;
+        }
+        dispatcher.dispatch(event);
+    }
+
+    private static String buildSensorCotXml(Sensor dto) {
+        long now     = System.currentTimeMillis();
+        String time  = COT_TIME_FMT.format(new Date(now));
+        String stale = COT_TIME_FMT.format(new Date(now + 300_000L));
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
+                + "<event version=\"2.0\" uid=\"" + dto.uid + "\" type=\"" + dto.cotType + "\""
+                + " how=\"m-g\" time=\"" + time + "\" start=\"" + time + "\" stale=\"" + stale + "\">"
+                + "<point lat=\"" + dto.lat + "\" lon=\"" + dto.lon
+                + "\" hae=\"" + dto.altitudeMeters + "\" ce=\"9999999.0\" le=\"9999999.0\"/>"
+                + "<detail>"
+                + "<contact callsign=\"" + dto.callsign + "\"/>"
+                + "<sensor"
+                + " azimuth=\"" + dto.heading + "\""
+                + " fov=\"" + dto.FOV + "\""
+                + " range=\"" + dto.range + "\""
+                + " vfov=\"45\""
+                + " fovRed=\"0.0\" fovGreen=\"0.8\" fovBlue=\"1.0\" fovAlpha=\"0.3\""
+                + " strokeColor=\"-16777216\" strokeWeight=\"0.5\""
+                + " rangeLines=\"" + (dto.range / 2.0) + "\""
+                + " rangeLineStrokeColor=\"-16777216\" rangeLineStrokeWeight=\"1.0\""
+                + " elevation=\"0\" roll=\"0\" displayMagneticReference=\"0\"/>"
+                + "<dewcCuas.cotprocessingFilterTag dewcCuas.SensorItem=\"true\""
+                + " FOV=\"" + dto.FOV + "\" range=\"" + dto.range + "\"/>"
+                + "</detail></event>";
     }
 }

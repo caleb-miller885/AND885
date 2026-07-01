@@ -53,6 +53,18 @@ public class CUAS_PLUGIN implements IPlugin {
         }
     };
 
+    private final MapEventDispatcher.MapEventDispatchListener sensorAddedListener = event -> {
+        MapItem item = event.getItem();
+        if (item == null || !item.hasMetaValue(Constants.SENSOR_ITEM)) return;
+        if (paneRegistry != null) paneRegistry.onSensorAdded(item);
+    };
+
+    private final MapEventDispatcher.MapEventDispatchListener sensorRemovedListener = event -> {
+        MapItem item = event.getItem();
+        if (item == null || !item.hasMetaValue(Constants.SENSOR_ITEM)) return;
+        if (paneRegistry != null) paneRegistry.onSensorRemoved(item);
+    };
+
     private final MapEventDispatcher.MapEventDispatchListener searchAreaAddedListener = event -> {
         MapItem item = event.getItem();
         if (item != null && item.hasMetaValue(Constants.SEARCH_AREA) && paneRegistry != null)
@@ -103,6 +115,8 @@ public class CUAS_PLUGIN implements IPlugin {
 
         mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_ADDED,   droneAddedListener);
         mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_REMOVED, droneRemovedListener);
+        mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_ADDED,   sensorAddedListener);
+        mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_REMOVED, sensorRemovedListener);
         mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_PERSIST,  searchAreaAddedListener);
         mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_REMOVED, searchAreaRemovedListener);
 
@@ -127,12 +141,16 @@ public class CUAS_PLUGIN implements IPlugin {
         // Remove listeners before cleanup so item removals don't fire notifications.
         mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_ADDED,   droneAddedListener);
         mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_REMOVED, droneRemovedListener);
+        mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_ADDED,   sensorAddedListener);
+        mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_REMOVED, sensorRemovedListener);
         mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_PERSIST,  searchAreaAddedListener);
         mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_REMOVED, searchAreaRemovedListener);
 
-        // Drone markers live in ATAK's groups; search the whole tree.
         List<MapItem> drones = mv.getRootGroup().deepFindItems(Constants.UAS_ITEM, "true");
         for (MapItem item : drones) item.removeFromGroup();
+
+        List<MapItem> sensors = mv.getRootGroup().deepFindItems(Constants.SENSOR_ITEM, "true");
+        for (MapItem item : sensors) item.removeFromGroup();
 
         // Ambiguity circles live in cuasGroup.
         if (cuasGroup != null) {

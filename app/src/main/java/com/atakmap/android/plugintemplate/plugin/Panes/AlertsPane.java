@@ -85,6 +85,7 @@ public class AlertsPane {
 
         root.findViewById(R.id.nav_drones).setOnClickListener(v -> registry.showLandingPane());
         root.findViewById(R.id.nav_pending).setOnClickListener(v -> registry.showPendingPane());
+        root.findViewById(R.id.nav_sensors).setOnClickListener(v -> registry.showSensorsPane());
         root.findViewById(R.id.nav_settings).setOnClickListener(v -> { /* TODO */ });
 
         // Replay any alerts that arrived before this pane was opened.
