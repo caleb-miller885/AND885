@@ -10,7 +10,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.atak.plugins.impl.PluginLayoutInflater;
-import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapTouchController;
 import com.atakmap.android.maps.MapView;
@@ -191,9 +190,7 @@ public class PendingPane {
     private void loadExistingItems() {
         MapView mv = MapView.getMapView();
         if (mv == null) return;
-        MapGroup cuasGroup = mv.getRootGroup().findMapGroup(Constants.CUAS_GROUP_NAME);
-        if (cuasGroup == null) return;
-        List<MapItem> items = cuasGroup.findItems(Constants.UAS_ITEM, "true");
+        List<MapItem> items = mv.getRootGroup().deepFindItems(Constants.UAS_ITEM, "true");
         for (MapItem item : items) {
             if (item.getMetaString(Constants.SELECTED_CLASSIFICATION_RESULT, null) == null) {
                 addOrUpdateItem(item);
