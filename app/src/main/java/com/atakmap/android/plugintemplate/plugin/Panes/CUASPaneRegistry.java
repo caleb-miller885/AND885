@@ -1,6 +1,7 @@
 package com.atakmap.android.plugintemplate.plugin.Panes;
 
 import android.content.Context;
+import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -30,6 +31,7 @@ public class CUASPaneRegistry implements ClassificationSelectionListener {
         this.pluginContext = pluginContext;
         this.services      = services;
         services.cotProcessor.setReclassificationListener(this::onReclassificationRequired);
+        services.cotProcessor.setPendingItemListener(this::onPendingItemUpdated);
     }
 
     // ── Pane accessors ────────────────────────────────────────────────────────
@@ -116,15 +118,18 @@ public class CUASPaneRegistry implements ClassificationSelectionListener {
             new SimpleDateFormat("HH:mm:ss", Locale.US);
 
     void onReclassificationRequired(MapItem item, String reason) {
-        if (landingPane != null) {
-            landingPane.removeItem(item);
-            landingPane.addOrUpdateItem(item);
-        }
-        getPendingPane().addOrUpdateItem(item);
+        // Always route through getLandingPane() so the instance is non-null
+        // and the pending summary section updates regardless of whether the pane is visible.
+        getLandingPane().removeItem(item);
+        getLandingPane().addOrUpdateItem(item);
         String ts = ALERT_TIME_FMT.format(new Date());
-        getAlertsPane().pushAlert(
-                "[" + ts + "] " + item.getTitle() + ": reclassification required — " + reason,
-                AlertsPane.SEVERITY_CRITICAL);
+        String alertMsg = "[" + ts + "] " + item.getTitle() + ": reclassification required — " + reason;
+        getAlertsPane().pushAlert(alertMsg, AlertsPane.SEVERITY_CRITICAL);
+    }
+
+    void onPendingItemUpdated(MapItem item) {
+        if (pendingPane != null) pendingPane.addOrUpdateItem(item);
+        if (landingPane != null) landingPane.addOrUpdateItem(item);
     }
 
     // ── Search area ───────────────────────────────────────────────────────────

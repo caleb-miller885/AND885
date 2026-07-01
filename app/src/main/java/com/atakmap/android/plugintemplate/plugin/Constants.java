@@ -1,7 +1,6 @@
 package com.atakmap.android.plugintemplate.plugin;
 
 public class Constants {
-    public static final double RECLASSIFICATION_THRESHOLD = 0.10;
     public static final String RECTANGLE_SEARCH_TOOL_CALLBACK = "com.atakmap.android.dewcCUAS.RECTANGLE_SEARCH_TOOL";
 
     public static final String CUAS_COT_FIlTER_TAG = "dewcCuas.cotprocessingFilterTag";

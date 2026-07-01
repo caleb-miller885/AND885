@@ -46,7 +46,9 @@ public class CuasCotProcessor {
         void onReclassificationRequired(MapItem item, String reason);
     }
 
-
+    public interface PendingItemListener {
+        void onPendingItemUpdated(MapItem item);
+    }
 
     private static final double RECLASSIFICATION_THRESHOLD = 0.10;
     private static final String TAG = "CUAS_PLUGIN";
@@ -58,10 +60,10 @@ public class CuasCotProcessor {
 
     private CotDetailHandler dewcCuasDetailHandler;
     private ReclassificationListener reclassificationListener;
+    private PendingItemListener pendingItemListener;
 
-    public void setReclassificationListener(ReclassificationListener l) {
-        this.reclassificationListener = l;
-    }
+    public void setReclassificationListener(ReclassificationListener l) { this.reclassificationListener = l; }
+    public void setPendingItemListener(PendingItemListener l)           { this.pendingItemListener = l; }
 
     public CuasCotProcessor(Context pluginContext, MapGroup cuasGroup, MapView mv) {
         this.pluginContext = pluginContext;
@@ -74,62 +76,54 @@ public class CuasCotProcessor {
 
             @Override
             public CommsMapComponent.ImportResult toItemMetadata(MapItem mapItem, CotEvent cotEvent, CotDetail cotDetail) {
-                if (cotDetail.getAttribute(UAS_ITEM) != null) {
-                    mapItem.setMetaString(UAS_ITEM, cotDetail.getAttribute(UAS_ITEM));
+                if (cotDetail.getAttribute(UAS_ITEM) == null)
+                    return CommsMapComponent.ImportResult.SUCCESS;
 
-                    CotDetail classificationResultsDetail = cotDetail.getFirstChildByName(0, CLASSIFICATION_RESULTS_COT_TAG);
-                    if (classificationResultsDetail != null) {
-                        ArrayList<String> serialized = new ArrayList<>();
-                        for (CotDetail resultDetail : classificationResultsDetail.getChildren()) {
-                            serialized.add(resultDetail.getAttribute("threatLevel") + DELIMITER
-                                    + resultDetail.getAttribute("classificationMedium") + DELIMITER
-                                    + resultDetail.getAttribute("confidence") + DELIMITER
-                                    + resultDetail.getAttribute("type2525") + DELIMITER
-                                    + resultDetail.getAttribute("typeName"));
-                        }
-                        mapItem.setMetaStringArrayList(CLASSIFICATION_RESULTS, serialized);
-                    }
+                //Set type override so every item is forced set to pending
+                mapItem.setType("a-p");
+                mv.getMapEventDispatcher().dispatch(
+                        new MapEvent.Builder(MapEvent.ITEM_REFRESH).setItem(mapItem).build());
 
-                    String selected = cotDetail.getAttribute(SELECTED_CLASSIFICATION_RESULT);
-                    if (selected != null && !selected.isEmpty()) {
-                        mapItem.setMetaString(SELECTED_CLASSIFICATION_RESULT, selected);
-                    }
-
-                    Log.d(TAG, "IMPORTED CUAS ITEM TO ITEM METADATA");
-                }
-                return null;
+                Effector dto = cotToEffector(mapItem, cotEvent, cotDetail);
+                // Post so this runs after MarkerImporter's addToGroup completes.
+                // ingestDrone finds the item via rootGroup.deepFindUID and updates it in place.
+                mv.post(() -> ingestDrone(dto));
+                return CommsMapComponent.ImportResult.SUCCESS;
             }
 
             @Override
             public boolean toCotDetail(MapItem mapItem, CotEvent cotEvent, CotDetail cotDetail) {
-                if (mapItem.hasMetaValue(UAS_ITEM)) {
-                    cotDetail.setAttribute(UAS_ITEM, mapItem.getMetaString(UAS_ITEM, ""));
+                if (!mapItem.hasMetaValue(UAS_ITEM)) return true;
 
-                    ArrayList<String> classificationResults = mapItem.getMetaStringArrayList(CLASSIFICATION_RESULTS);
-                    if (classificationResults != null && !classificationResults.isEmpty()) {
-                        CotDetail classificationResultsDetail = new CotDetail(CLASSIFICATION_RESULTS_COT_TAG);
-                        for (String entry : classificationResults) {
-                            String[] parts = entry.split("\\" + DELIMITER, 5);
-                            if (parts.length >= 3) {
-                                CotDetail resultDetail = new CotDetail(CLASSIFICATION_RESULT_COT_TAG);
-                                resultDetail.setAttribute("threatLevel", parts[0]);
-                                resultDetail.setAttribute("classificationMedium", parts[1]);
-                                resultDetail.setAttribute("confidence", parts[2]);
-                                resultDetail.setAttribute("type2525", parts.length >= 4 ? parts[3] : "");
-                                resultDetail.setAttribute("typeName", parts.length >= 5 ? parts[4] : "");
-                                classificationResultsDetail.addChild(resultDetail);
-                            }
+                // All CUAS data goes inside the filter-tag wrapper so that
+                // toItemMetadata receives it as the named detail element.
+                CotDetail filterTag = new CotDetail(CUAS_COT_FIlTER_TAG);
+                filterTag.setAttribute(UAS_ITEM, mapItem.getMetaString(UAS_ITEM, ""));
+
+                ArrayList<String> classificationResults = mapItem.getMetaStringArrayList(CLASSIFICATION_RESULTS);
+                if (classificationResults != null && !classificationResults.isEmpty()) {
+                    CotDetail resultsWrapper = new CotDetail(CLASSIFICATION_RESULTS_COT_TAG);
+                    for (String entry : classificationResults) {
+                        String[] parts = entry.split("\\" + DELIMITER, 5);
+                        if (parts.length >= 3) {
+                            CotDetail r = new CotDetail(CLASSIFICATION_RESULT_COT_TAG);
+                            r.setAttribute("threatLevel",          parts[0]);
+                            r.setAttribute("classificationMedium", parts[1]);
+                            r.setAttribute("confidence",           parts[2]);
+                            r.setAttribute("type2525",  parts.length >= 4 ? parts[3] : "");
+                            r.setAttribute("typeName",  parts.length >= 5 ? parts[4] : "");
+                            resultsWrapper.addChild(r);
                         }
-                        cotDetail.addChild(classificationResultsDetail);
                     }
-
-                    String selected = mapItem.getMetaString(SELECTED_CLASSIFICATION_RESULT, null);
-                    if (selected != null) {
-                        cotDetail.setAttribute(SELECTED_CLASSIFICATION_RESULT, selected);
-                    }
-
-                    Log.d(TAG, "Exported CUAS ITEM TO COT DETAIL");
+                    filterTag.addChild(resultsWrapper);
                 }
+
+                String selected = mapItem.getMetaString(SELECTED_CLASSIFICATION_RESULT, null);
+                if (selected != null)
+                    filterTag.setAttribute(SELECTED_CLASSIFICATION_RESULT, selected);
+
+                cotDetail.addChild(filterTag);
+                Log.d(TAG, "toCotDetail: exported CUAS detail for uid=" + mapItem.getUID());
                 return true;
             }
         });
@@ -141,6 +135,181 @@ public class CuasCotProcessor {
 
     public void sendCotInternal(CotDetail detail) {
         dewcCuasDetailHandler.toItemMetadata(mv.getSelfMarker(), null, detail);
+    }
+
+    // ── Public ingestion API ──────────────────────────────────────────────────
+
+    public void ingestDrone(Effector dto) {
+        if (cuasGroup == null) return;
+
+        GeoPoint markerLocation = new GeoPoint(dto.lat, dto.lon, dto.altitudeMeters);
+        GeoPointMetaData markerGPM = new GeoPointMetaData(markerLocation);
+
+        ArrayList<String> serialized = new ArrayList<>();
+        if (dto.ClassificationResultList != null && !dto.ClassificationResultList.isEmpty()) {
+            for (ClassificationResult r : dto.ClassificationResultList) {
+                serialized.add(r.threatLevel      + DELIMITER
+                        + r.classificationMedium  + DELIMITER
+                        + r.confidence            + DELIMITER
+                        + (r.type2525 != null ? r.type2525 : "") + DELIMITER
+                        + (r.typeName != null ? r.typeName : ""));
+            }
+        }
+
+        // Search the all map groups for existing drone with UID
+        MapItem existing = mv.getRootGroup().deepFindUID(dto.uid);
+
+        // ── UPDATE PATH ───────────────────────────────────────────────────────
+        Log.d(TAG, "ingestDrone uid=" + dto.uid + " existing=" + (existing != null));
+        if (existing instanceof PointMapItem && existing.hasMetaValue(UAS_ITEM)) {
+            ((PointMapItem) existing).setPoint(markerGPM);
+            if (existing instanceof Marker)
+                ((Marker) existing).setTrack(dto.heading, 0.0);
+
+            // ATAK resets the marker type from the COT XML on every update — restore classified type.
+            String selectedType = existing.getMetaString(SELECTED_CLASSIFICATION_RESULT, null);
+            if (selectedType != null) {
+                String[] typeParts = selectedType.split("\\|", 5);
+                if (typeParts.length >= 4 && !typeParts[3].isEmpty())
+                    existing.setType(typeParts[3]);
+                MapView mv = MapView.getMapView();
+                if (mv != null)
+                    mv.getMapEventDispatcher().dispatch(
+                            new MapEvent.Builder(MapEvent.ITEM_REFRESH).setItem(existing).build());
+
+
+        }
+            //Check to see if incoming classification percentages have shifted by the reclassification threshold
+            //Reset back to unclassified and trigger UI to remove from list of active drones
+            if (existing.getMetaString(SELECTED_CLASSIFICATION_RESULT, null) != null
+                    && !serialized.isEmpty()) {
+                ArrayList<String> oldList = existing.getMetaStringArrayList(CLASSIFICATION_RESULTS);
+                String triggerMedium = confidenceDeltaTrigger(oldList, serialized);
+                if (triggerMedium != null) {
+                    existing.setMetaString(SELECTED_CLASSIFICATION_RESULT, null);
+                    existing.setType("a-p");
+                    mv.getMapEventDispatcher().dispatch(
+                            new MapEvent.Builder(MapEvent.ITEM_REFRESH).setItem(existing).build());
+                    if (reclassificationListener != null)
+                        reclassificationListener.onReclassificationRequired(
+                                existing, "confidence shift >10% on " + triggerMedium);
+                }
+            }
+
+            //If item not classified move to pending
+            if (!serialized.isEmpty()) {
+                existing.setMetaStringArrayList(CLASSIFICATION_RESULTS, serialized);
+                if (existing.getMetaString(SELECTED_CLASSIFICATION_RESULT, null) == null
+                        && pendingItemListener != null) {
+                    pendingItemListener.onPendingItemUpdated(existing);
+                }
+            }
+
+            //Update location ambiguity circle
+            MapItem ambiguity = cuasGroup.deepFindItem(LOCATION_AMBIGUITY_UID, dto.uid);
+            if (ambiguity instanceof Circle) {
+                ((Circle) ambiguity).setCenterPoint(markerGPM);
+                ((Circle) ambiguity).setRadius(dto.locationAmbiguity);
+            }
+            return;
+        }
+
+        // ── CREATE / INIT PATH ────────────────────────────────────────────────
+        // COT path: existing is ATAK's freshly-placed marker (no UAS_ITEM yet), use it as-is.
+        // DTO path: existing is null, create via PlacePointTool (adds to ATAK's group).
+        Log.d(TAG, "ingestDrone CREATE uid=" + dto.uid);
+        MapItem marker;
+        if (existing != null) {
+            marker = existing;
+        } else {
+            PlacePointTool.MarkerCreator mc = new PlacePointTool.MarkerCreator(markerLocation);
+            mc.setHow("m-g");
+            mc.setType("a-p");
+            mc.setUid(dto.uid);
+            mc.setShowFiveLine(true);
+            mc.setCallsign(dto.callsign);
+            marker = mc.placePoint();
+        }
+
+        marker.setMetaString(UAS_ITEM, "true");
+        if (!serialized.isEmpty())
+            marker.setMetaStringArrayList(CLASSIFICATION_RESULTS, serialized);
+        marker.setMetaString(SELECTED_CLASSIFICATION_RESULT, null);
+        if (marker instanceof Marker)
+            ((Marker) marker).setTrack(dto.heading, 0.0);
+        marker.addOnVisibleChangedListener(changedItem -> {
+            MapItem ambiguity = cuasGroup.deepFindItem(LOCATION_AMBIGUITY_UID, dto.uid);
+            if (ambiguity != null) ambiguity.setVisible(changedItem.getVisible());
+        });
+
+        // Dispatch ITEM_ADDED first so droneAddedListener initializes the landing pane
+        // (via onItemAdded → getLandingPane()), then notify pending so the landing pane
+        // already exists when onPendingItemUpdated checks landingPane != null.
+        mv.getMapEventDispatcher().dispatch(
+                new MapEvent.Builder(MapEvent.ITEM_ADDED).setItem(marker).build());
+
+        if (!serialized.isEmpty() && pendingItemListener != null)
+            pendingItemListener.onPendingItemUpdated(marker);
+
+        Circle locationAmbiguityShape = new Circle(markerGPM, dto.locationAmbiguity);
+        locationAmbiguityShape.setMetaString(LOCATION_AMBIGUITY_AREA, "true");
+        locationAmbiguityShape.setMetaString(LOCATION_AMBIGUITY_UID, dto.uid);
+        locationAmbiguityShape.setTitle(dto.callsign + " : Ambiguity");
+        locationAmbiguityShape.setMetaString("callsign", dto.callsign + " : Ambiguity");
+        locationAmbiguityShape.setMetaString("strokeStyle", "solid");
+        locationAmbiguityShape.setClickable(false);
+        locationAmbiguityShape.setMovable(false);
+        locationAmbiguityShape.setColor(Color.BLUE);
+        locationAmbiguityShape.setFillColor(Color.BLUE);
+        locationAmbiguityShape.setFillAlpha(30);
+        locationAmbiguityShape.setStrokeStyle(3);
+        locationAmbiguityShape.setStrokeWeight(3);
+        cuasGroup.addItem(locationAmbiguityShape);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+
+    //Maps incoming COT to effector DTO such that it can be used in ingestDrone
+    private Effector cotToEffector(MapItem mapItem, CotEvent cotEvent, CotDetail cotDetail) {
+        Effector dto = new Effector();
+        dto.uid      = mapItem.getUID();
+        dto.callsign = mapItem.getTitle() != null ? mapItem.getTitle() : dto.uid;
+
+        if (cotEvent != null && cotEvent.getCotPoint() != null) {
+            dto.lat               = cotEvent.getCotPoint().getLat();
+            dto.lon               = cotEvent.getCotPoint().getLon();
+            dto.altitudeMeters    = cotEvent.getCotPoint().getHae();
+            dto.locationAmbiguity = cotEvent.getCotPoint().getCe();
+        }
+
+        dto.heading = 0.0;
+        if (cotEvent != null) {
+            CotDetail track = cotEvent.findDetail("track");
+            if (track != null) {
+                String course = track.getAttribute("course");
+                if (course != null) {
+                    try { dto.heading = Double.parseDouble(course); }
+                    catch (NumberFormatException ignored) {}
+                }
+            }
+        }
+
+        dto.ClassificationResultList = new ArrayList<>();
+        CotDetail resultsDetail = cotDetail.getFirstChildByName(0, CLASSIFICATION_RESULTS_COT_TAG);
+        if (resultsDetail != null) {
+            for (CotDetail r : resultsDetail.getChildren()) {
+                ClassificationResult cr = new ClassificationResult();
+                cr.threatLevel          = r.getAttribute("threatLevel");
+                cr.classificationMedium = r.getAttribute("classificationMedium");
+                cr.type2525             = r.getAttribute("type2525");
+                cr.typeName             = r.getAttribute("typeName");
+                try { cr.confidence = Double.parseDouble(r.getAttribute("confidence")); }
+                catch (Exception ignored) { cr.confidence = 0.0; }
+                dto.ClassificationResultList.add(cr);
+            }
+        }
+        return dto;
     }
 
     private String confidenceDeltaTrigger(ArrayList<String> oldList, ArrayList<String> newList) {
@@ -169,93 +338,5 @@ public class CuasCotProcessor {
     public void attachDetailtoSA(CotDetail detail) {
         CotMapComponent.getInstance().addAdditionalDetail(detail.getElementName(), detail);
         AtakBroadcast.getInstance().sendBroadcast(new Intent(ReportingRate.REPORT_LOCATION).putExtra("reason", "detail update"));
-    }
-
-    public void ingestDrone(Effector dto) {
-        if (cuasGroup == null) return;
-
-        GeoPoint markerLocation     = new GeoPoint(dto.lat, dto.lon, dto.altitudeMeters);
-        GeoPointMetaData markerGPM  = new GeoPointMetaData(markerLocation);
-
-        // Serialize classification results once — used by both paths
-        ArrayList<String> serialized = new ArrayList<>();
-        if (dto.ClassificationResultList != null && !dto.ClassificationResultList.isEmpty()) {
-            for (ClassificationResult r : dto.ClassificationResultList) {
-                serialized.add(r.threatLevel      + DELIMITER
-                        + r.classificationMedium  + DELIMITER
-                        + r.confidence            + DELIMITER
-                        + (r.type2525  != null ? r.type2525  : "") + DELIMITER
-                        + (r.typeName  != null ? r.typeName  : ""));
-            }
-        }
-
-        // ── UPDATE PATH ───────────────────────────────────────────────────────
-        MapItem existing = cuasGroup.deepFindUID(dto.uid);
-        if (existing instanceof PointMapItem) {
-            ((PointMapItem) existing).setPoint(markerGPM);
-
-            // Reclassification check — only for already-classified items
-            if (existing.getMetaString(SELECTED_CLASSIFICATION_RESULT, null) != null
-                    && !serialized.isEmpty()) {
-                ArrayList<String> oldList = existing.getMetaStringArrayList(CLASSIFICATION_RESULTS);
-                String triggerMedium = confidenceDeltaTrigger(oldList, serialized);
-                if (triggerMedium != null) {
-                    existing.setMetaString(SELECTED_CLASSIFICATION_RESULT, null);
-                    existing.setType("a-P");
-                    mv.getMapEventDispatcher().dispatch(
-                            new MapEvent.Builder(MapEvent.ITEM_REFRESH).setItem(existing).build());
-                    if (reclassificationListener != null)
-                        reclassificationListener.onReclassificationRequired(
-                                existing, "confidence shift >10% on " + triggerMedium);
-                }
-            }
-
-            if (!serialized.isEmpty())
-                existing.setMetaStringArrayList(CLASSIFICATION_RESULTS, serialized);
-
-            // Update the ambiguity circle in-place
-            MapItem ambiguity = cuasGroup.deepFindItem(LOCATION_AMBIGUITY_UID, dto.uid);
-            if (ambiguity instanceof Circle) {
-                ((Circle) ambiguity).setCenterPoint(markerGPM);
-                ((Circle) ambiguity).setRadius(dto.locationAmbiguity);
-            }
-            return;
-        }
-
-        // ── CREATE PATH ───────────────────────────────────────────────────────
-        // First time we see this UID — place in pending state.
-        PlacePointTool.MarkerCreator markercreationtool = new PlacePointTool.MarkerCreator(markerLocation);
-        markercreationtool.setHow("h-g-i-g-o");
-        markercreationtool.setUid(dto.uid);
-        markercreationtool.setType("a-P");
-        markercreationtool.setShowFiveLine(true);
-        markercreationtool.setCallsign(dto.callsign);
-
-        MapItem marker = markercreationtool.placePoint();
-        marker.setMetaString(UAS_ITEM, "true");
-        if (!serialized.isEmpty())
-            marker.setMetaStringArrayList(CLASSIFICATION_RESULTS, serialized);
-        marker.setMetaString(SELECTED_CLASSIFICATION_RESULT, null);
-
-        marker.addOnVisibleChangedListener(changedItem -> {
-            MapItem ambiguity = cuasGroup.deepFindItem(LOCATION_AMBIGUITY_UID, dto.uid);
-            if (ambiguity != null) ambiguity.setVisible(changedItem.getVisible());
-        });
-        cuasGroup.addItem(marker);
-
-        Circle locationAmbiguityShape = new Circle(markerGPM, dto.locationAmbiguity);
-        locationAmbiguityShape.setMetaString(LOCATION_AMBIGUITY_AREA, "true");
-        locationAmbiguityShape.setMetaString(LOCATION_AMBIGUITY_UID, dto.uid);
-        locationAmbiguityShape.setTitle(dto.callsign + " : Ambiguity");
-        locationAmbiguityShape.setMetaString("callsign", dto.callsign + " : Ambiguity");
-        locationAmbiguityShape.setMetaString("strokeStyle", "solid");
-        locationAmbiguityShape.setClickable(false);
-        locationAmbiguityShape.setMovable(false);
-        locationAmbiguityShape.setColor(Color.BLUE);
-        locationAmbiguityShape.setFillColor(Color.BLUE);
-        locationAmbiguityShape.setFillAlpha(30);
-        locationAmbiguityShape.setStrokeStyle(3);
-        locationAmbiguityShape.setStrokeWeight(3);
-        cuasGroup.addItem(locationAmbiguityShape);
     }
 }

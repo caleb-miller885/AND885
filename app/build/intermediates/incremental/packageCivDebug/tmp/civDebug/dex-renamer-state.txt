@@ -1,4 +1,4 @@
-#Tue Jun 30 13:42:05 ACST 2026
+#Wed Jul 01 10:59:37 ACST 2026
 base.0=/home/caleb/archive/EW PROJECTS/ATAK-CIV-5.7.0.0-SDK/plugins/CUAS/app/build/intermediates/dex/civDebug/mergeProjectDexCivDebug/0/classes.dex
 base.1=/home/caleb/archive/EW PROJECTS/ATAK-CIV-5.7.0.0-SDK/plugins/CUAS/app/build/intermediates/dex/civDebug/mergeProjectDexCivDebug/1/classes.dex
 base.2=/home/caleb/archive/EW PROJECTS/ATAK-CIV-5.7.0.0-SDK/plugins/CUAS/app/build/intermediates/dex/civDebug/mergeProjectDexCivDebug/11/classes.dex

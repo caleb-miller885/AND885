@@ -14,7 +14,9 @@ import com.atak.plugins.impl.PluginLayoutInflater;
 import com.atakmap.android.plugintemplate.plugin.R;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import gov.tak.api.ui.Pane;
@@ -33,6 +35,17 @@ public class AlertsPane {
     private static final int COLOR_WARNING  = Color.parseColor("#FFC107");
     private static final int COLOR_INFO     = Color.parseColor("#4A9EFF");
 
+    private static final class PendingAlert {
+        final String message;
+        final String severity;
+        final String timestamp;
+        PendingAlert(String message, String severity, String timestamp) {
+            this.message   = message;
+            this.severity  = severity;
+            this.timestamp = timestamp;
+        }
+    }
+
     private final Context pluginContext;
     private final CUASPaneRegistry registry;
     private Pane pane;
@@ -42,6 +55,9 @@ public class AlertsPane {
     private TextView tvHeaderCount;
     private TextView tvEmpty;
     private int alertCount = 0;
+
+    // Holds alerts that arrive before the pane is first inflated
+    private final List<PendingAlert> queue = new ArrayList<>();
 
     public AlertsPane(Context pluginContext, CUASPaneRegistry registry) {
         this.pluginContext = pluginContext;
@@ -71,26 +87,31 @@ public class AlertsPane {
         root.findViewById(R.id.nav_pending).setOnClickListener(v -> registry.showPendingPane());
         root.findViewById(R.id.nav_settings).setOnClickListener(v -> { /* TODO */ });
 
+        // Replay any alerts that arrived before this pane was opened.
+        // They were queued in reverse-chronological order so iterate in reverse
+        // to insert them newest-first (addView at index 0 each time).
+        for (int i = queue.size() - 1; i >= 0; i--) {
+            PendingAlert p = queue.get(i);
+            addRow(p.message, p.severity, p.timestamp);
+        }
+        queue.clear();
+
         updateHeader();
     }
 
     // ── Public API ────────────────────────────────────────────────────────────
 
     public void pushAlert(String message, String severity) {
+        String timestamp = TIME_FMT.format(new Date());
         runOnMainThread(() -> {
-            if (alertsList == null) return;
-
-            View row = PluginLayoutInflater.inflate(pluginContext, R.layout.item_alert_layout, null);
-            bindAlert(row, message, severity);
-
-            // Most recent at top
-            alertsList.addView(row, 0);
-            alertCount++;
+            if (alertsList == null) {
+                // Pane not inflated yet — queue so it appears when the user opens it.
+                // alertCount is incremented by addRow when replayed; don't double-count here.
+                queue.add(0, new PendingAlert(message, severity, timestamp));
+                return;
+            }
+            addRow(message, severity, timestamp);
             updateHeader();
-
-            if (tvEmpty != null) tvEmpty.setVisibility(View.GONE);
-
-            // Scroll to top so the newest is visible
             if (alertsScroll != null)
                 alertsScroll.post(() -> alertsScroll.smoothScrollTo(0, 0));
         });
@@ -98,15 +119,24 @@ public class AlertsPane {
 
     public void clearItems() {
         runOnMainThread(() -> {
+            queue.clear();
             if (alertsList != null) alertsList.removeAllViews();
             alertCount = 0;
             updateHeader();
         });
     }
 
-    // ── Binding ───────────────────────────────────────────────────────────────
+    // ── Internal ──────────────────────────────────────────────────────────────
 
-    private void bindAlert(View row, String message, String severity) {
+    private void addRow(String message, String severity, String timestamp) {
+        View row = PluginLayoutInflater.inflate(pluginContext, R.layout.item_alert_layout, null);
+        bindAlert(row, message, severity, timestamp);
+        alertsList.addView(row, 0);
+        alertCount++;
+        if (tvEmpty != null) tvEmpty.setVisibility(View.GONE);
+    }
+
+    private void bindAlert(View row, String message, String severity, String timestamp) {
         int color = colorForSeverity(severity);
 
         View bar = row.findViewById(R.id.alert_severity_bar);
@@ -125,14 +155,11 @@ public class AlertsPane {
         }
 
         TextView tvTime = row.findViewById(R.id.tv_alert_time);
-        if (tvTime != null)
-            tvTime.setText(TIME_FMT.format(new Date()));
+        if (tvTime != null) tvTime.setText(timestamp);
 
         TextView tvMessage = row.findViewById(R.id.tv_alert_message);
         if (tvMessage != null) tvMessage.setText(message);
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
     private void updateHeader() {
         if (tvHeaderCount != null)
