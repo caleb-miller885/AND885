@@ -1,17 +1,26 @@
 package com.atakmap.android.plugintemplate.plugin;
 
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+
 public class Constants {
     public static final String RECTANGLE_SEARCH_TOOL_CALLBACK = "com.atakmap.android.dewcCUAS.RECTANGLE_SEARCH_TOOL";
 
     public static final String CUAS_COT_FIlTER_TAG = "dewcCuas.cotprocessingFilterTag";
-    // Map group name used to contain all CUAS markers
     public static final String CUAS_GROUP_NAME = "CUAS";
 
-    // MapItem tag — set to any non-null value to mark an item as a CUAS UAS target
     public static final String UAS_ITEM = "dewcCuas.UasItem";
     public static final String SENSOR_ITEM = "dewcCuas.SensorItem";
     public static final String CUAS_SENSOR_COT_FILTER_TAG = "dewcCuas.sensorFilterTag";
 
+    public static final double RECLASSIFICATION_THRESHOLD = 0.10;
+    public static final String DELIMITER = "|";
+
+    public static final SimpleDateFormat COT_TIME_FMT;
+    static {
+        COT_TIME_FMT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        COT_TIME_FMT.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+    }
 
 
     public static final String LOCATION_AMBIGUITY_UID = "dewcCuas.locationAmbiguityUID";

@@ -346,7 +346,6 @@ public class LandingPane {
 
     // ── Public API ────────────────────────────────────────────────────────────
 
-    /** Routes a new/updated item to pending summary or active list. */
     public void addOrUpdateItem(final MapItem item) {
         runOnMainThread(() -> {
             if (listContainer == null) return;
@@ -365,7 +364,6 @@ public class LandingPane {
         });
     }
 
-    /** Called by registry after the user has selected a classification in PendingPane. */
     public void onItemClassified(final MapItem item, final String serializedResult) {
         runOnMainThread(() -> {
             String uid = item.getUID();

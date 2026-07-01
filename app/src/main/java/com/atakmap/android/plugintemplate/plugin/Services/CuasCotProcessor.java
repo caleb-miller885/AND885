@@ -3,8 +3,11 @@ package com.atakmap.android.plugintemplate.plugin.Services;
 import static com.atakmap.android.plugintemplate.plugin.Constants.CLASSIFICATION_RESULT_COT_TAG;
 import static com.atakmap.android.plugintemplate.plugin.Constants.CLASSIFICATION_RESULTS;
 import static com.atakmap.android.plugintemplate.plugin.Constants.CLASSIFICATION_RESULTS_COT_TAG;
+import static com.atakmap.android.plugintemplate.plugin.Constants.COT_TIME_FMT;
 import static com.atakmap.android.plugintemplate.plugin.Constants.CUAS_COT_FIlTER_TAG;
+import static com.atakmap.android.plugintemplate.plugin.Constants.DELIMITER;
 import static com.atakmap.android.plugintemplate.plugin.Constants.LOCATION_AMBIGUITY_UID;
+import static com.atakmap.android.plugintemplate.plugin.Constants.RECLASSIFICATION_THRESHOLD;
 import static com.atakmap.android.plugintemplate.plugin.Constants.SENSOR_ITEM;
 import static com.atakmap.android.plugintemplate.plugin.Constants.SELECTED_CLASSIFICATION_RESULT;
 import static com.atakmap.android.plugintemplate.plugin.Constants.UAS_ITEM;
@@ -15,6 +18,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.util.Log;
 
+import com.atakmap.android.plugintemplate.plugin.HelperFunctions;
 import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.android.cot.detail.CotDetailHandler;
 import com.atakmap.android.cot.detail.CotDetailManager;
@@ -47,6 +51,8 @@ import java.util.Map;
 
 public class CuasCotProcessor {
 
+    //Listeners to handle UI updates
+
     public interface ReclassificationListener {
         void onReclassificationRequired(MapItem item, String reason);
     }
@@ -55,15 +61,8 @@ public class CuasCotProcessor {
         void onPendingItemUpdated(MapItem item);
     }
 
-    private static final double RECLASSIFICATION_THRESHOLD = 0.10;
     private static final String TAG = "CUAS_PLUGIN";
-    private static final String DELIMITER = "|";
 
-    private static final SimpleDateFormat COT_TIME_FMT;
-    static {
-        COT_TIME_FMT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
-        COT_TIME_FMT.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
-    }
 
     private final Context pluginContext;
     private final MapGroup cuasGroup;
@@ -73,8 +72,13 @@ public class CuasCotProcessor {
     private ReclassificationListener reclassificationListener;
     private PendingItemListener pendingItemListener;
 
-    public void setReclassificationListener(ReclassificationListener l) { this.reclassificationListener = l; }
-    public void setPendingItemListener(PendingItemListener l)           { this.pendingItemListener = l; }
+    public void setReclassificationListener(ReclassificationListener l) {
+        this.reclassificationListener = l;
+    }
+
+    public void setPendingItemListener(PendingItemListener l) {
+        this.pendingItemListener = l;
+    }
 
     public CuasCotProcessor(Context pluginContext, MapGroup cuasGroup, MapView mv) {
         this.pluginContext = pluginContext;
@@ -88,13 +92,26 @@ public class CuasCotProcessor {
             @Override
             public CommsMapComponent.ImportResult toItemMetadata(MapItem mapItem, CotEvent cotEvent, CotDetail cotDetail) {
                 if (cotDetail.getAttribute(UAS_ITEM) != null) {
-                    mapItem.setType("a-p");
-                    mv.getMapEventDispatcher().dispatch(
-                            new MapEvent.Builder(MapEvent.ITEM_REFRESH).setItem(mapItem).build());
+                    //For an incoming COT matching existing MapItem, applied metadata should be avaliable.... maybe.
+
+                    //If classification already selected, use it otherwise set to pending
+                    String selected = mapItem.getMetaString(SELECTED_CLASSIFICATION_RESULT, null);
+                    if (selected != null) {
+                        String[] typeParts = selected.split("\\|", 5);
+                        if (typeParts.length >= 4 && !typeParts[3].isEmpty())
+                            mapItem.setType(typeParts[3]);
+                    } else {
+                        mapItem.setType("a-p");
+                    }
+
                     Effector dto = cotToEffector(mapItem, cotEvent, cotDetail);
                     mv.post(() -> ingestEffector(dto));
                 } else if (cotDetail.getAttribute(SENSOR_ITEM) != null) {
                     mapItem.setMetaString(SENSOR_ITEM, "true");
+                    String fov = cotDetail.getAttribute("FOV");
+                    String range = cotDetail.getAttribute("range");
+                    if (fov != null) mapItem.setMetaString("dewcCuas.sensorFOV", fov);
+                    if (range != null) mapItem.setMetaString("dewcCuas.sensorRange", range);
                 }
                 return CommsMapComponent.ImportResult.SUCCESS;
             }
@@ -105,11 +122,13 @@ public class CuasCotProcessor {
                 if (mapItem.hasMetaValue(SENSOR_ITEM)) {
                     CotDetail filterTag = new CotDetail(CUAS_COT_FIlTER_TAG);
                     filterTag.setAttribute(SENSOR_ITEM, "true");
+                    filterTag.setAttribute("FOV", mapItem.getMetaString("dewcCuas.sensorFOV", "0"));
+                    filterTag.setAttribute("range", mapItem.getMetaString("dewcCuas.sensorRange", "0"));
                     cotDetail.addChild(filterTag);
                     return true;
                 }
 
-                if(mapItem.hasMetaValue(UAS_ITEM)){
+                if (mapItem.hasMetaValue(UAS_ITEM)) {
                     CotDetail filterTag = new CotDetail(CUAS_COT_FIlTER_TAG);
                     filterTag.setAttribute(UAS_ITEM, mapItem.getMetaString(UAS_ITEM, ""));
 
@@ -120,11 +139,11 @@ public class CuasCotProcessor {
                             String[] parts = entry.split("\\" + DELIMITER, 5);
                             if (parts.length >= 3) {
                                 CotDetail r = new CotDetail(CLASSIFICATION_RESULT_COT_TAG);
-                                r.setAttribute("threatLevel",          parts[0]);
+                                r.setAttribute("threatLevel", parts[0]);
                                 r.setAttribute("classificationMedium", parts[1]);
-                                r.setAttribute("confidence",           parts[2]);
-                                r.setAttribute("type2525",  parts.length >= 4 ? parts[3] : "");
-                                r.setAttribute("typeName",  parts.length >= 5 ? parts[4] : "");
+                                r.setAttribute("confidence", parts[2]);
+                                r.setAttribute("type2525", parts.length >= 4 ? parts[3] : "");
+                                r.setAttribute("typeName", parts.length >= 5 ? parts[4] : "");
                                 resultsWrapper.addChild(r);
                             }
                         }
@@ -152,7 +171,6 @@ public class CuasCotProcessor {
         dewcCuasDetailHandler.toItemMetadata(mv.getSelfMarker(), null, detail);
     }
 
-    // ── Public ingestion API ──────────────────────────────────────────────────
 
     public void ingestEffector(Effector dto) {
         if (cuasGroup == null) return;
@@ -163,9 +181,9 @@ public class CuasCotProcessor {
         ArrayList<String> serialized = new ArrayList<>();
         if (dto.ClassificationResultList != null && !dto.ClassificationResultList.isEmpty()) {
             for (ClassificationResult r : dto.ClassificationResultList) {
-                serialized.add(r.threatLevel      + DELIMITER
-                        + r.classificationMedium  + DELIMITER
-                        + r.confidence            + DELIMITER
+                serialized.add(r.threatLevel + DELIMITER
+                        + r.classificationMedium + DELIMITER
+                        + r.confidence + DELIMITER
                         + (r.type2525 != null ? r.type2525 : "") + DELIMITER
                         + (r.typeName != null ? r.typeName : ""));
             }
@@ -179,21 +197,8 @@ public class CuasCotProcessor {
         if (existing instanceof PointMapItem && existing.hasMetaValue(UAS_ITEM)) {
             ((PointMapItem) existing).setPoint(markerGPM);
             if (existing instanceof Marker)
-                ((Marker) existing).setTrack(dto.heading, 0.0);
+                ((Marker) existing).setTrack(dto.heading, dto.speed);
 
-            // ATAK resets the marker type from the COT XML on every update — restore classified type.
-            String selectedType = existing.getMetaString(SELECTED_CLASSIFICATION_RESULT, null);
-            if (selectedType != null) {
-                String[] typeParts = selectedType.split("\\|", 5);
-                if (typeParts.length >= 4 && !typeParts[3].isEmpty())
-                    existing.setType(typeParts[3]);
-                MapView mv = MapView.getMapView();
-                if (mv != null)
-                    mv.getMapEventDispatcher().dispatch(
-                            new MapEvent.Builder(MapEvent.ITEM_REFRESH).setItem(existing).build());
-
-
-        }
             //Check to see if incoming classification percentages have shifted by the reclassification threshold
             //Reset back to unclassified and trigger UI to remove from list of active drones
             if (existing.getMetaString(SELECTED_CLASSIFICATION_RESULT, null) != null
@@ -203,8 +208,9 @@ public class CuasCotProcessor {
                 if (triggerMedium != null) {
                     existing.setMetaString(SELECTED_CLASSIFICATION_RESULT, null);
                     existing.setType("a-p");
-                    mv.getMapEventDispatcher().dispatch(
-                            new MapEvent.Builder(MapEvent.ITEM_REFRESH).setItem(existing).build());
+                    HelperFunctions.refreshOverlayManager();
+                    HelperFunctions.refreshMapItem(existing);
+
                     if (reclassificationListener != null)
                         reclassificationListener.onReclassificationRequired(
                                 existing, "confidence shift >10% on " + triggerMedium);
@@ -251,17 +257,14 @@ public class CuasCotProcessor {
             marker.setMetaStringArrayList(CLASSIFICATION_RESULTS, serialized);
         marker.setMetaString(SELECTED_CLASSIFICATION_RESULT, null);
         if (marker instanceof Marker)
-            ((Marker) marker).setTrack(dto.heading, 0.0);
+            ((Marker) marker).setTrack(dto.heading, dto.speed);
         marker.addOnVisibleChangedListener(changedItem -> {
             MapItem ambiguity = cuasGroup.deepFindItem(LOCATION_AMBIGUITY_UID, dto.uid);
             if (ambiguity != null) ambiguity.setVisible(changedItem.getVisible());
         });
 
-        // Dispatch ITEM_ADDED first so droneAddedListener initializes the landing pane
-        // (via onItemAdded → getLandingPane()), then notify pending so the landing pane
-        // already exists when onPendingItemUpdated checks landingPane != null.
-        mv.getMapEventDispatcher().dispatch(
-                new MapEvent.Builder(MapEvent.ITEM_ADDED).setItem(marker).build());
+        //Trigger UI updates
+        HelperFunctions.addedMapItem(marker);
 
         if (!serialized.isEmpty() && pendingItemListener != null)
             pendingItemListener.onPendingItemUpdated(marker);
@@ -288,24 +291,34 @@ public class CuasCotProcessor {
     //Maps incoming COT to effector DTO such that it can be used in ingestDrone
     private Effector cotToEffector(MapItem mapItem, CotEvent cotEvent, CotDetail cotDetail) {
         Effector dto = new Effector();
-        dto.uid      = mapItem.getUID();
+        dto.uid = mapItem.getUID();
         dto.callsign = mapItem.getTitle() != null ? mapItem.getTitle() : dto.uid;
 
         if (cotEvent != null && cotEvent.getCotPoint() != null) {
-            dto.lat               = cotEvent.getCotPoint().getLat();
-            dto.lon               = cotEvent.getCotPoint().getLon();
-            dto.altitudeMeters    = cotEvent.getCotPoint().getHae();
+            dto.lat = cotEvent.getCotPoint().getLat();
+            dto.lon = cotEvent.getCotPoint().getLon();
+            dto.altitudeMeters = cotEvent.getCotPoint().getHae();
             dto.locationAmbiguity = cotEvent.getCotPoint().getCe();
         }
 
         dto.heading = 0.0;
+        dto.speed =0.0;
         if (cotEvent != null) {
             CotDetail track = cotEvent.findDetail("track");
             if (track != null) {
                 String course = track.getAttribute("course");
+                String speed = track.getAttribute("speed");
                 if (course != null) {
-                    try { dto.heading = Double.parseDouble(course); }
-                    catch (NumberFormatException ignored) {}
+                    try {
+                        dto.heading = Double.parseDouble(course);
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+                if(speed!=null){
+                    try{
+                        dto.speed = Double.parseDouble(speed);
+                    }catch (NumberFormatException ignored){
+                    }
                 }
             }
         }
@@ -315,12 +328,15 @@ public class CuasCotProcessor {
         if (resultsDetail != null) {
             for (CotDetail r : resultsDetail.getChildren()) {
                 ClassificationResult cr = new ClassificationResult();
-                cr.threatLevel          = r.getAttribute("threatLevel");
+                cr.threatLevel = r.getAttribute("threatLevel");
                 cr.classificationMedium = r.getAttribute("classificationMedium");
-                cr.type2525             = r.getAttribute("type2525");
-                cr.typeName             = r.getAttribute("typeName");
-                try { cr.confidence = Double.parseDouble(r.getAttribute("confidence")); }
-                catch (Exception ignored) { cr.confidence = 0.0; }
+                cr.type2525 = r.getAttribute("type2525");
+                cr.typeName = r.getAttribute("typeName");
+                try {
+                    cr.confidence = Double.parseDouble(r.getAttribute("confidence"));
+                } catch (Exception ignored) {
+                    cr.confidence = 0.0;
+                }
                 dto.ClassificationResultList.add(cr);
             }
         }
@@ -333,8 +349,10 @@ public class CuasCotProcessor {
         for (String s : oldList) {
             String[] p = s.split("\\|", 5);
             if (p.length >= 3) {
-                try { oldConf.put(p[1], Double.parseDouble(p[2])); }
-                catch (NumberFormatException ignored) {}
+                try {
+                    oldConf.put(p[1], Double.parseDouble(p[2]));
+                } catch (NumberFormatException ignored) {
+                }
             }
         }
         for (String s : newList) {
@@ -345,7 +363,8 @@ public class CuasCotProcessor {
             try {
                 if (Math.abs(Double.parseDouble(p[2]) - prev) >= RECLASSIFICATION_THRESHOLD)
                     return p[1];
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
         }
         return null;
     }
@@ -358,8 +377,10 @@ public class CuasCotProcessor {
     // ── Sensor ingestion ──────────────────────────────────────────────────────
 
     public void ingestSensor(Sensor dto) {
+        //If received via COT and handled by internal COT processor do nothing
         if (mv.getRootGroup().deepFindUID(dto.uid) != null) return;
 
+        //If received via DTO then convert into COT and pump through the same pipeline
         CotDispatcher dispatcher = CotMapComponent.getInternalDispatcher();
         if (dispatcher == null) {
             Log.e(TAG, "ingestSensor: internal dispatcher null");
@@ -374,8 +395,8 @@ public class CuasCotProcessor {
     }
 
     private static String buildSensorCotXml(Sensor dto) {
-        long now     = System.currentTimeMillis();
-        String time  = COT_TIME_FMT.format(new Date(now));
+        long now = System.currentTimeMillis();
+        String time = COT_TIME_FMT.format(new Date(now));
         String stale = COT_TIME_FMT.format(new Date(now + 300_000L));
         return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
                 + "<event version=\"2.0\" uid=\"" + dto.uid + "\" type=\"" + dto.cotType + "\""

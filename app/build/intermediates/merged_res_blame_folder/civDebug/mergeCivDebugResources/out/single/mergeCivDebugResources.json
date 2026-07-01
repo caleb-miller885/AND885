@@ -20,6 +20,10 @@
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/ic_arrow_drop_down.xml"
     },
     {
+        "merged": "com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_ic_cuas.png.flat",
+        "source": "com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/ic_cuas.png"
+    },
+    {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_ic_sensor.xml.flat",
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/ic_sensor.xml"
     },
@@ -30,10 +34,6 @@
     {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_threat_dot_friendly.xml.flat",
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/threat_dot_friendly.xml"
-    },
-    {
-        "merged": "com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_ic_sensor.xml.flat",
-        "source": "com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/ic_sensor.xml"
     },
     {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_ic_alert.xml.flat",
@@ -74,6 +74,10 @@
     {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_threat_dot_minimal.xml.flat",
         "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/threat_dot_minimal.xml"
+    },
+    {
+        "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_ic_cuas.xml.flat",
+        "source": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-main-8:/drawable/ic_cuas.xml"
     },
     {
         "merged": "/home/caleb/.gradle/daemon/8.14.3/com.atakmap.android.plugintemplate.plugin.app-civDebug-5:/drawable_btn_gray.xml.flat",

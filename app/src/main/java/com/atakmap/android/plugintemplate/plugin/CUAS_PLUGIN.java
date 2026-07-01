@@ -1,7 +1,6 @@
 package com.atakmap.android.plugintemplate.plugin;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.atak.plugins.impl.PluginContextProvider;
 import com.atakmap.android.maps.MapEvent;
@@ -39,13 +38,13 @@ public class CUAS_PLUGIN implements IPlugin {
     private final MapEventDispatcher.MapEventDispatchListener droneAddedListener = event -> {
         MapItem item = event.getItem();
         if (item == null || !item.hasMetaValue(Constants.UAS_ITEM)) return;
-        if (paneRegistry != null) paneRegistry.onItemAdded(item);
+        if (paneRegistry != null) paneRegistry.onEffectorAdded(item);
     };
 
     private final MapEventDispatcher.MapEventDispatchListener droneRemovedListener = event -> {
         MapItem item = event.getItem();
         if (item == null || !item.hasMetaValue(Constants.UAS_ITEM)) return;
-        if (paneRegistry != null) paneRegistry.onItemRemoved(item);
+        if (paneRegistry != null) paneRegistry.onEffectorRemoved(item);
         if (cuasGroup != null) {
             MapItem ambiguity = cuasGroup.deepFindItem(
                     Constants.LOCATION_AMBIGUITY_UID, item.getUID());
@@ -91,7 +90,7 @@ public class CUAS_PLUGIN implements IPlugin {
         toolbarItem = new ToolbarItem.Builder(
                 pluginContext.getString(R.string.app_name),
                 MarshalManager.marshal(
-                        pluginContext.getResources().getDrawable(R.drawable.ic_launcher),
+                        pluginContext.getResources().getDrawable(R.drawable.ic_cuas),
                         android.graphics.drawable.Drawable.class,
                         gov.tak.api.commons.graphics.Bitmap.class))
                 .setListener(new ToolbarItemAdapter() {
@@ -117,7 +116,7 @@ public class CUAS_PLUGIN implements IPlugin {
         mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_REMOVED, droneRemovedListener);
         mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_ADDED,   sensorAddedListener);
         mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_REMOVED, sensorRemovedListener);
-        mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_PERSIST,  searchAreaAddedListener);
+        mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_ADDED,  searchAreaAddedListener);
         mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_REMOVED, searchAreaRemovedListener);
 
         services     = new CUASServiceRegistry(pluginContext, cuasGroup, mv);

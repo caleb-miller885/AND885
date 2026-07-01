@@ -22,6 +22,7 @@ dimen fontSize
 drawable btn_gray
 drawable ic_alert
 drawable ic_arrow_drop_down
+drawable ic_cuas
 drawable ic_drone
 drawable ic_history
 drawable ic_launcher

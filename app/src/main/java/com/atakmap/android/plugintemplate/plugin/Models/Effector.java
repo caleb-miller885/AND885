@@ -11,6 +11,7 @@ public class Effector {
     public double altitudeMeters;
     public double locationAmbiguity;
     public double heading;
+    public double speed;
 
     public List<ClassificationResult> ClassificationResultList;
 

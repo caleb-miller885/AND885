@@ -35,7 +35,7 @@
     <string name="search_area_active">ACTIVE SEARCH AREA</string>
     <string name="search_area_clear">CLEAR</string>
     <string name="search_area_define">DEFINE SEARCH AREA</string>
-    <string name="versionName" translatable="false">0.1 (44d76831) - [5.7.0]</string>
+    <string name="versionName" translatable="false">0.1 (eda89411) - [5.7.0]</string>
     <style name="ATAKEditText" parent="@android:style/Widget.EditText">
         
         

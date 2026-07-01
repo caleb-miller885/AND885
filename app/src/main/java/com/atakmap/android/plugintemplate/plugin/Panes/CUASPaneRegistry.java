@@ -6,16 +6,15 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapItem;
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.plugintemplate.plugin.Constants;
+import com.atakmap.android.plugintemplate.plugin.HelperFunctions;
 import com.atakmap.android.plugintemplate.plugin.Services.CUASServiceRegistry;
 
 import gov.tak.api.ui.IHostUIService;
 import gov.tak.api.ui.Pane;
 
-public class CUASPaneRegistry implements ClassificationSelectionListener {
+public class CUASPaneRegistry {
 
     private final IHostUIService uiService;
     private final Context pluginContext;
@@ -92,14 +91,14 @@ public class CUASPaneRegistry implements ClassificationSelectionListener {
 
     // ── Item lifecycle ────────────────────────────────────────────────────────
 
-    public void onItemAdded(MapItem item) {
+    public void onEffectorAdded(MapItem item) {
         if (!item.hasMetaValue(Constants.UAS_ITEM)) return;
         getLandingPane().addOrUpdateItem(item);
         if (item.getMetaString(Constants.SELECTED_CLASSIFICATION_RESULT, null) == null)
             getPendingPane().addOrUpdateItem(item);
     }
 
-    public void onItemRemoved(MapItem item) {
+    public void onEffectorRemoved(MapItem item) {
         if (landingPane != null) landingPane.removeItem(item);
         if (pendingPane  != null) pendingPane.removeItem(item);
     }
@@ -113,18 +112,14 @@ public class CUASPaneRegistry implements ClassificationSelectionListener {
     }
 
     // ── ClassificationSelectionListener ──────────────────────────────────────
-
-    @Override
     public void onClassificationSelected(MapItem item, String serializedResult) {
         String[] parts  = serializedResult.split("\\|", 5);
         String type2525 = parts.length >= 4 ? parts[3] : null;
 
         if (type2525 != null && !type2525.isEmpty()) {
             item.setType(type2525);
-            MapView mv = MapView.getMapView();
-            if (mv != null)
-                mv.getMapEventDispatcher().dispatch(
-                        new MapEvent.Builder(MapEvent.ITEM_REFRESH).setItem(item).build());
+            HelperFunctions.refreshOverlayManager();
+            HelperFunctions.refreshMapItem(item);
         }
 
         item.setMetaString(Constants.SELECTED_CLASSIFICATION_RESULT, serializedResult);
