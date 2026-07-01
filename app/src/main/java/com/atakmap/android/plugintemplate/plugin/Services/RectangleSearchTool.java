@@ -14,6 +14,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.plugintemplate.plugin.Constants;
+import com.atakmap.android.plugintemplate.plugin.HelperFunctions;
 
 import java.util.List;
 
@@ -60,6 +61,7 @@ public class RectangleSearchTool extends BroadcastReceiver {
         rect.setStrokeStyle(1);
         rect.setMetaString(Constants.SEARCH_AREA, "true");
         rect.persist(mv.getMapEventDispatcher(), null, getClass());
+        HelperFunctions.addedMapItem(rect);
 
     }
 

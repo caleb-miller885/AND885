@@ -142,7 +142,7 @@ public class CUAS_PLUGIN implements IPlugin {
         mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_REMOVED, droneRemovedListener);
         mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_ADDED,   sensorAddedListener);
         mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_REMOVED, sensorRemovedListener);
-        mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_PERSIST,  searchAreaAddedListener);
+        mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_ADDED,  searchAreaAddedListener);
         mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_REMOVED, searchAreaRemovedListener);
 
         List<MapItem> drones = mv.getRootGroup().deepFindItems(Constants.UAS_ITEM, "true");
