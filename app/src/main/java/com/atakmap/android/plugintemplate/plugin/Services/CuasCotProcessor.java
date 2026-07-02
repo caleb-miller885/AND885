@@ -93,6 +93,7 @@ public class CuasCotProcessor {
             public CommsMapComponent.ImportResult toItemMetadata(MapItem mapItem, CotEvent cotEvent, CotDetail cotDetail) {
                 if (cotDetail.getAttribute(UAS_ITEM) != null) {
                     //For an incoming COT matching existing MapItem, applied metadata should be avaliable.... maybe.
+                    //Note that it searches the root group for this
 
                     //If classification already selected, use it otherwise set to pending
                     String selected = mapItem.getMetaString(SELECTED_CLASSIFICATION_RESULT, null);
@@ -105,6 +106,7 @@ public class CuasCotProcessor {
                     }
 
                     Effector dto = cotToEffector(mapItem, cotEvent, cotDetail);
+                    //Ensure this runs after this async thread has completed such that an incoming map item exists
                     mv.post(() -> ingestEffector(dto));
                 } else if (cotDetail.getAttribute(SENSOR_ITEM) != null) {
                     mapItem.setMetaString(SENSOR_ITEM, "true");
@@ -165,10 +167,6 @@ public class CuasCotProcessor {
 
     public void unregister() {
         CotDetailManager.getInstance().unregisterHandler(dewcCuasDetailHandler);
-    }
-
-    public void sendCotInternal(CotDetail detail) {
-        dewcCuasDetailHandler.toItemMetadata(mv.getSelfMarker(), null, detail);
     }
 
 

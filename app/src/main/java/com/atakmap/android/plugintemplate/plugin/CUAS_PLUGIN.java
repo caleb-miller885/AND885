@@ -64,10 +64,13 @@ public class CUAS_PLUGIN implements IPlugin {
         if (paneRegistry != null) paneRegistry.onSensorRemoved(item);
     };
 
-    private final MapEventDispatcher.MapEventDispatchListener searchAreaAddedListener = event -> {
+    private final MapEventDispatcher.MapEventDispatchListener searchAreaUpdateListener = event -> {
         MapItem item = event.getItem();
-        if (item != null && item.hasMetaValue(Constants.SEARCH_AREA) && paneRegistry != null)
+        if (item == null || paneRegistry == null) return;
+        if (item.hasMetaValue(Constants.SEARCH_AREA))
             paneRegistry.checkActiveSearchAreas();
+        else if (item.hasMetaValue(Constants.UAS_ITEM))
+            paneRegistry.refreshSearchAreaFilter();
     };
 
     private final MapEventDispatcher.MapEventDispatchListener searchAreaRemovedListener = event -> {
@@ -116,7 +119,9 @@ public class CUAS_PLUGIN implements IPlugin {
         mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_REMOVED, droneRemovedListener);
         mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_ADDED,   sensorAddedListener);
         mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_REMOVED, sensorRemovedListener);
-        mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_ADDED,  searchAreaAddedListener);
+        mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_PERSIST,  searchAreaUpdateListener);
+        mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_REFRESH,  searchAreaUpdateListener);
+
         mv.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_REMOVED, searchAreaRemovedListener);
 
         services     = new CUASServiceRegistry(pluginContext, cuasGroup, mv);
@@ -142,7 +147,8 @@ public class CUAS_PLUGIN implements IPlugin {
         mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_REMOVED, droneRemovedListener);
         mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_ADDED,   sensorAddedListener);
         mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_REMOVED, sensorRemovedListener);
-        mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_ADDED,  searchAreaAddedListener);
+        mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_PERSIST,  searchAreaUpdateListener);
+        mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_REFRESH,  searchAreaUpdateListener);
         mv.getMapEventDispatcher().removeMapEventListener(MapEvent.ITEM_REMOVED, searchAreaRemovedListener);
 
         List<MapItem> drones = mv.getRootGroup().deepFindItems(Constants.UAS_ITEM, "true");

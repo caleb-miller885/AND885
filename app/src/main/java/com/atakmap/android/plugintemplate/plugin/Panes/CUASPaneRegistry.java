@@ -151,6 +151,10 @@ public class CUASPaneRegistry {
         if (landingPane != null) landingPane.checkActiveSearchAreas();
     }
 
+    public void refreshSearchAreaFilter() {
+        if (landingPane != null) landingPane.refreshSearchAreaFilter();
+    }
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     public void onStop() {

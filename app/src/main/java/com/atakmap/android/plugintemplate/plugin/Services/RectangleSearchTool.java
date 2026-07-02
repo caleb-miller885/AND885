@@ -61,8 +61,6 @@ public class RectangleSearchTool extends BroadcastReceiver {
         rect.setStrokeStyle(1);
         rect.setMetaString(Constants.SEARCH_AREA, "true");
         rect.persist(mv.getMapEventDispatcher(), null, getClass());
-        HelperFunctions.addedMapItem(rect);
-
     }
 
 }

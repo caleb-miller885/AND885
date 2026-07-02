@@ -19,6 +19,7 @@ public class CUASServiceRegistry {
 
     public void onStart() {
         cotProcessor.register();
+
         AtakBroadcast.getInstance().registerReceiver(
                 rectangleSearchTool,
                 new AtakBroadcast.DocumentedIntentFilter(Constants.RECTANGLE_SEARCH_TOOL_CALLBACK));

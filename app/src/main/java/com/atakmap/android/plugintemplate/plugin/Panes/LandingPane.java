@@ -215,6 +215,11 @@ public class LandingPane {
         setSearchAreaActive(areas != null && !areas.isEmpty(), areas);
     }
 
+
+    public void refreshSearchAreaFilter() {
+        runOnMainThread(this::applyFilter);
+    }
+
     private void styleSearchAreaButton(boolean active) {
         if (btnSearchArea == null) return;
         GradientDrawable bg = new GradientDrawable();
