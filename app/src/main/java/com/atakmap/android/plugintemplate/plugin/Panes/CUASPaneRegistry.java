@@ -24,6 +24,7 @@ public class CUASPaneRegistry {
     private PendingPane pendingPane;
     private AlertsPane  alertsPane;
     private SensorsPane sensorsPane;
+    private SettingsPane settingsPane;
 
     public CUASPaneRegistry(IHostUIService uiService, Context pluginContext, CUASServiceRegistry services) {
         this.uiService     = uiService;
@@ -59,6 +60,12 @@ public class CUASPaneRegistry {
         return sensorsPane;
     }
 
+    private SettingsPane getSettingsPane() {
+        if (settingsPane == null)
+            settingsPane = new SettingsPane(pluginContext, this);
+        return settingsPane;
+    }
+
     // ── Show panes ────────────────────────────────────────────────────────────
 
     public void showLandingPane() {
@@ -81,6 +88,12 @@ public class CUASPaneRegistry {
 
     public void showSensorsPane() {
         Pane pane = getSensorsPane().getPane();
+        if (uiService != null && !uiService.isPaneVisible(pane))
+            uiService.showPane(pane, null);
+    }
+
+    public void showSettingsPane() {
+        Pane pane = getSettingsPane().getPane();
         if (uiService != null && !uiService.isPaneVisible(pane))
             uiService.showPane(pane, null);
     }
@@ -162,5 +175,6 @@ public class CUASPaneRegistry {
         if (pendingPane != null) { pendingPane.clearItems(); pendingPane = null; }
         if (alertsPane  != null) { alertsPane.clearItems();  alertsPane  = null; }
         if (sensorsPane != null) { sensorsPane.clearItems(); sensorsPane = null; }
+        if (settingsPane != null) { settingsPane.clearItems(); settingsPane = null; }
     }
 }

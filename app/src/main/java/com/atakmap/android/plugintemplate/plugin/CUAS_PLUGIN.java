@@ -34,6 +34,7 @@ public class CUAS_PLUGIN implements IPlugin {
     private CUASServiceRegistry services;
     private CUASPaneRegistry paneRegistry;
     private DroneSim droneSim;
+    private DroneExportTest droneExportTest;
 
     private final MapEventDispatcher.MapEventDispatchListener droneAddedListener = event -> {
         MapItem item = event.getItem();
@@ -130,8 +131,11 @@ public class CUAS_PLUGIN implements IPlugin {
 
         uiService.addToolbarItem(toolbarItem);
 
-        droneSim = new DroneSim(mv, services.cotProcessor);
-        droneSim.start();
+//        droneSim = new DroneSim(mv, services.cotProcessor);
+//        droneSim.start();
+
+        droneExportTest = new DroneExportTest(mv, services.cotProcessor);
+        droneExportTest.start();
     }
 
     @Override
@@ -139,6 +143,8 @@ public class CUAS_PLUGIN implements IPlugin {
         if (uiService == null) return;
 
         if (droneSim != null) { droneSim.stop(); droneSim = null; }
+        if (droneExportTest != null) { droneExportTest.stop(); droneExportTest = null; }
+
 
         if (services != null) { services.onStop(); services = null; }
 

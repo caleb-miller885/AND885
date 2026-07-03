@@ -13,7 +13,10 @@ public class Constants {
     public static final String SENSOR_ITEM = "dewcCuas.SensorItem";
     public static final String CUAS_SENSOR_COT_FILTER_TAG = "dewcCuas.sensorFilterTag";
 
-    public static final double RECLASSIFICATION_THRESHOLD = 0.10;
+    public static final double DEFAULT_RECLASSIFICATION_THRESHOLD = 0.10;
+    // Key under which the user-configurable reclassification threshold is stored
+    // via AtakPreferences (backed by the ATAK-wide shared preferences file).
+    public static final String PREF_RECLASSIFICATION_THRESHOLD = "dewcCuas.reclassificationThreshold";
     public static final String DELIMITER = "|";
 
     public static final SimpleDateFormat COT_TIME_FMT;

@@ -63,7 +63,7 @@ public class SensorsPane {
         root.findViewById(R.id.nav_drones).setOnClickListener(v -> registry.showLandingPane());
         root.findViewById(R.id.nav_pending).setOnClickListener(v -> registry.showPendingPane());
         root.findViewById(R.id.nav_alerts).setOnClickListener(v -> registry.showAlertsPane());
-        root.findViewById(R.id.nav_settings).setOnClickListener(v -> { /* TODO */ });
+        root.findViewById(R.id.nav_settings).setOnClickListener(v -> registry.showSettingsPane());
 
         loadExistingItems();
         updateHeader();

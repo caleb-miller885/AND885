@@ -7,7 +7,8 @@ import static com.atakmap.android.plugintemplate.plugin.Constants.COT_TIME_FMT;
 import static com.atakmap.android.plugintemplate.plugin.Constants.CUAS_COT_FIlTER_TAG;
 import static com.atakmap.android.plugintemplate.plugin.Constants.DELIMITER;
 import static com.atakmap.android.plugintemplate.plugin.Constants.LOCATION_AMBIGUITY_UID;
-import static com.atakmap.android.plugintemplate.plugin.Constants.RECLASSIFICATION_THRESHOLD;
+import static com.atakmap.android.plugintemplate.plugin.Constants.DEFAULT_RECLASSIFICATION_THRESHOLD;
+import static com.atakmap.android.plugintemplate.plugin.Constants.PREF_RECLASSIFICATION_THRESHOLD;
 import static com.atakmap.android.plugintemplate.plugin.Constants.SENSOR_ITEM;
 import static com.atakmap.android.plugintemplate.plugin.Constants.SELECTED_CLASSIFICATION_RESULT;
 import static com.atakmap.android.plugintemplate.plugin.Constants.UAS_ITEM;
@@ -32,6 +33,7 @@ import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.plugintemplate.plugin.Models.ClassificationResult;
 import com.atakmap.android.plugintemplate.plugin.Models.Effector;
 import com.atakmap.android.plugintemplate.plugin.Models.Sensor;
+import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.user.PlacePointTool;
 import com.atakmap.android.util.Circle;
 import com.atakmap.comms.CommsMapComponent;
@@ -343,6 +345,7 @@ public class CuasCotProcessor {
 
     private String confidenceDeltaTrigger(ArrayList<String> oldList, ArrayList<String> newList) {
         if (oldList == null || oldList.isEmpty()) return null;
+        double threshold = getReclassificationThreshold();
         Map<String, Double> oldConf = new HashMap<>();
         for (String s : oldList) {
             String[] p = s.split("\\|", 5);
@@ -359,12 +362,18 @@ public class CuasCotProcessor {
             Double prev = oldConf.get(p[1]);
             if (prev == null) continue;
             try {
-                if (Math.abs(Double.parseDouble(p[2]) - prev) >= RECLASSIFICATION_THRESHOLD)
+                if (Math.abs(Double.parseDouble(p[2]) - prev) >= threshold)
                     return p[1];
             } catch (NumberFormatException ignored) {
             }
         }
         return null;
+    }
+
+    private double getReclassificationThreshold() {
+        return AtakPreferences.getInstance(pluginContext)
+                .getSharedPrefs()
+                .getFloat(PREF_RECLASSIFICATION_THRESHOLD, (float) DEFAULT_RECLASSIFICATION_THRESHOLD);
     }
 
     public void attachDetailtoSA(CotDetail detail) {
