@@ -20,6 +20,7 @@ import com.atakmap.android.plugintemplate.plugin.R;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import gov.tak.api.ui.Pane;
 import gov.tak.api.ui.PaneBuilder;
@@ -61,6 +62,11 @@ public class PlatformPipelinePane {
     private PipelinePreset activePreset;
     private List<PipelinePreset> availablePresets = new ArrayList<>();
     private ArrayAdapter<PipelinePreset> presetAdapter;
+
+    /** Last known pipeline health reported by the platform's own /status ("READY"/"NOT READY"/
+     *  "PAUSED"/etc); null until we've heard from it. Independent of connection state — see
+     *  PlatformStatusResponse. Only shown when not previewing an unloaded preset. */
+    private String pipelineStatusText;
 
     public PlatformPipelinePane(Context pluginContext, CUASPaneRegistry registry) {
         this.pluginContext = pluginContext;
@@ -142,6 +148,7 @@ public class PlatformPipelinePane {
         if (entry == null) return;
         setPlatformName(entry.name);
         setAvailablePresets(entry.availablePresets);
+        setPipelineStatus(entry.pipelineStatus);
         setActivePreset(entry.activePreset);
         setEndpoint(entry.endpoint);
         setConnectionStatus(entry.connectionState, entry.endpoint);
@@ -171,6 +178,25 @@ public class PlatformPipelinePane {
 
     public void clearItems() {
         // No persistent listeners beyond view state; kept for parity with sibling panes.
+    }
+
+    /**
+     * Live pipeline health as reported by the platform's own /status — not connection state.
+     * Redraws the status row immediately if we're not currently previewing an unloaded preset
+     * (previewing always shows the "not loaded" label regardless of live status).
+     */
+    public void setPipelineStatus(String status) {
+        pipelineStatusText = normalizeStatus(status);
+
+        PipelinePreset selected = getSelectedPreset();
+        boolean preview = selected != null && activePreset != null
+                && !activePreset.uid.equals(selected.uid);
+        renderPipeline(preview ? selected : activePreset, preview);
+    }
+
+    private static String normalizeStatus(String raw) {
+        if (raw == null || raw.trim().isEmpty()) return null;
+        return raw.trim().toUpperCase(Locale.US).replace('_', ' ');
     }
 
     // ── Connection status / endpoint ─────────────────────────────────────────
@@ -257,21 +283,29 @@ public class PlatformPipelinePane {
         if (pipelineStrip == null) return;
         pipelineStrip.removeAllViews();
 
-        int accent = preview
+        // Chip border color answers "is this what's loaded and running, or a preview of
+        // something that isn't?" — independent of the platform's own reported health below.
+        int chipAccent = preview
                 ? pluginContext.getResources().getColor(R.color.threat_high)
                 : pluginContext.getResources().getColor(R.color.threat_minimal);
+
+        // Status row color/text answers "how healthy is the running pipeline?" (pipelineStatusText,
+        // from the platform's own /status) — except while previewing, which always wins since it's
+        // not describing what's actually running.
+        int statusColor = preview ? chipAccent : pipelineStatusColor(pipelineStatusText);
+        String statusLabel = preview
+                ? "PREVIEW — " + (preset != null ? preset.name : "") + " (not loaded)"
+                : "PIPELINE — " + (pipelineStatusText != null ? pipelineStatusText : "UNKNOWN");
 
         if (pipelineStatusDot != null) {
             GradientDrawable dotBg = new GradientDrawable();
             dotBg.setShape(GradientDrawable.OVAL);
-            dotBg.setColor(accent);
+            dotBg.setColor(statusColor);
             pipelineStatusDot.setBackground(dotBg);
         }
         if (tvPipelineStatus != null) {
-            tvPipelineStatus.setText(preview
-                    ? "PREVIEW — " + (preset != null ? preset.name : "") + " (not loaded)"
-                    : "PIPELINE — RUNNING");
-            tvPipelineStatus.setTextColor(accent);
+            tvPipelineStatus.setText(statusLabel);
+            tvPipelineStatus.setTextColor(statusColor);
         }
 
         List<PipelineElement> elements = preset != null ? preset.elements : new ArrayList<>();
@@ -280,11 +314,22 @@ public class PlatformPipelinePane {
 
         for (int i = 0; i < elements.size(); i++) {
             View chip = PluginLayoutInflater.inflate(pluginContext, R.layout.platform_pipeline_element_chip, null);
-            bindChip(chip, elements.get(i), accent);
+            bindChip(chip, elements.get(i), chipAccent);
             pipelineStrip.addView(chip);
 
             if (i < elements.size() - 1)
                 pipelineStrip.addView(makeSeparator());
+        }
+    }
+
+    private int pipelineStatusColor(String normalized) {
+        if (normalized == null)
+            return pluginContext.getResources().getColor(R.color.cuas_text_secondary);
+        switch (normalized) {
+            case "READY":     return pluginContext.getResources().getColor(R.color.threat_minimal);
+            case "NOT READY": return pluginContext.getResources().getColor(R.color.threat_critical);
+            case "PAUSED":    return pluginContext.getResources().getColor(R.color.threat_high);
+            default:          return pluginContext.getResources().getColor(R.color.threat_high);
         }
     }
 

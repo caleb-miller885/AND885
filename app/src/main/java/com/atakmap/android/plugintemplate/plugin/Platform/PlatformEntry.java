@@ -33,6 +33,11 @@ public class PlatformEntry {
     public String endpoint;
     public ConnectionState connectionState = ConnectionState.DISCONNECTED;
 
+    /** Last known pipeline health from GET {endpoint}/status ("ready"/"not ready"/"paused"/etc,
+     *  raw as received); null until the platform has actually reported one. Independent of
+     *  connectionState — see PlatformStatusResponse. */
+    public String pipelineStatus;
+
     public PipelinePreset activePreset;
     public List<PipelinePreset> availablePresets = new ArrayList<>();
 

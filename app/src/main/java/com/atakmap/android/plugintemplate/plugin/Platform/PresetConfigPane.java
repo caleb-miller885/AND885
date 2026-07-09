@@ -117,7 +117,7 @@ public class PresetConfigPane {
         if (spinner == null) return;
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(pluginContext,
-                R.layout.platform_spinner_selected, option.choices);
+                R.layout.platform_spinner_selected, option.options);
         adapter.setDropDownViewResource(R.layout.platform_spinner_dropdown);
         spinner.setAdapter(adapter);
         spinner.setSelection(option.selectedIndex, false);
@@ -126,8 +126,8 @@ public class PresetConfigPane {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 option.selectedIndex = position;
-                if ("MODEL".equalsIgnoreCase(option.label) && position < option.choices.size())
-                    element.activeModel = option.choices.get(position);
+                if ("MODEL".equalsIgnoreCase(option.label) && position < option.options.size())
+                    element.activeModel = option.options.get(position);
             }
 
             @Override

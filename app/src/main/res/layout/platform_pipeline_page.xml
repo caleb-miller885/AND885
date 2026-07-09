@@ -99,19 +99,6 @@
                 android:textStyle="bold"
                 android:letterSpacing="0.05" />
 
-            <View
-                android:layout_width="6dp"
-                android:layout_height="6dp"
-                android:background="@drawable/threat_dot_friendly"
-                android:layout_marginEnd="4dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="STATUS"
-                android:textColor="@color/threat_minimal"
-                android:textSize="8sp"
-                android:textStyle="bold" />
         </LinearLayout>
 
         <TextView

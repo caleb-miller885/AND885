@@ -286,6 +286,12 @@ def getCommandFlavor() {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: '*.jar')
+
+    // Platform onboard-server API client. Pulls in okhttp3/okio transitively, but those are
+    // excluded below (and version-pinned in resolutionStrategy) so this compiles against — and
+    // runs against — the copy ATAK's host app already bundles, instead of shipping a second one.
+    implementation 'com.squareup.retrofit2:retrofit:2.11.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.11.0'
 }
 
 configurations.all {

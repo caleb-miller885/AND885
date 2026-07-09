@@ -19,10 +19,15 @@ import com.atakmap.android.plugintemplate.plugin.Platform.PlatformEntry;
 import com.atakmap.android.plugintemplate.plugin.Platform.PlatformPipelinePane;
 import com.atakmap.android.plugintemplate.plugin.Platform.PresetConfigPane;
 import com.atakmap.android.plugintemplate.plugin.Platform.Models.PipelinePreset;
+import com.atakmap.android.plugintemplate.plugin.Platform.Network.PlatformApiClient;
+import com.atakmap.android.plugintemplate.plugin.Platform.Network.PlatformStatusResponse;
 import com.atakmap.android.plugintemplate.plugin.Services.CUASServiceRegistry;
 
 import gov.tak.api.ui.IHostUIService;
 import gov.tak.api.ui.Pane;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class CUASPaneRegistry {
 
@@ -108,6 +113,7 @@ public class CUASPaneRegistry {
         if (entry == null) return;
         entry.activePreset = preset;
         getPlatformPipelinePane().setActivePreset(preset);
+        //LOAD preset api call
         Toast.makeText(pluginContext, "Loaded preset: " + preset.name, Toast.LENGTH_SHORT).show();
     }
 
@@ -125,16 +131,51 @@ public class CUASPaneRegistry {
         entry.endpoint = endpoint;
         entry.connectionState = PlatformEntry.ConnectionState.CONNECTING;
         getPlatformPipelinePane().setConnectionStatus(entry.connectionState, endpoint);
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            entry.connectionState = PlatformEntry.ConnectionState.CONNECTED;
-            getPlatformPipelinePane().setConnectionStatus(entry.connectionState, endpoint);
-            Toast.makeText(pluginContext, "Connected: " + endpoint, Toast.LENGTH_SHORT).show();
-        }, 900);
+
+        String base = endpoint.startsWith("http") ? endpoint : "http://" + endpoint;
+        String url  = base.endsWith("/") ? base + "status" : base + "/status";
+
+        PlatformApiClient.SERVICE.getStatus(url).enqueue(new Callback<PlatformStatusResponse>() {
+            @Override
+            public void onResponse(Call<PlatformStatusResponse> call, Response<PlatformStatusResponse> response) {
+                PlatformStatusResponse body = response.isSuccessful() ? response.body() : null;
+                onConnectResult(entry, endpoint, response.isSuccessful(),
+                        response.isSuccessful() ? null : "HTTP " + response.code(),
+                        body != null ? body.pipelineStatus : null,
+                        body != null ? body.activePreset : null);
+            }
+
+            @Override
+            public void onFailure(Call<PlatformStatusResponse> call, Throwable t) {
+                onConnectResult(entry, endpoint, false, t.getMessage(), null, null);
+            }
+        });
+    }
+
+    private void onConnectResult(PlatformEntry entry, String endpoint, boolean success,
+                                  String failureReason, String pipelineStatus, PipelinePreset activePreset) {
+        new Handler(Looper.getMainLooper()).post(() -> {
+            entry.connectionState = success
+                    ? PlatformEntry.ConnectionState.CONNECTED
+                    : PlatformEntry.ConnectionState.DISCONNECTED;
+            if (pipelineStatus != null) entry.pipelineStatus = pipelineStatus;
+            if (activePreset != null) entry.activePreset = activePreset;
+
+            if (entry.uid.equals(currentPlatformUid)) {
+                getPlatformPipelinePane().setConnectionStatus(entry.connectionState, endpoint);
+                getPlatformPipelinePane().setPipelineStatus(entry.pipelineStatus);
+                if (activePreset != null) getPlatformPipelinePane().setActivePreset(entry.activePreset);
+            }
+            Toast.makeText(pluginContext,
+                    success ? "Connected: " + endpoint : "Connect failed: " + failureReason,
+                    Toast.LENGTH_SHORT).show();
+        });
     }
 
     public void savePreset(PipelinePreset preset) {
         Toast.makeText(pluginContext, "Saved preset: " + preset.name, Toast.LENGTH_SHORT).show();
         showPlatformPipelinePane();
+        //Edit preset API call
     }
 
     // ── Show panes ────────────────────────────────────────────────────────────
