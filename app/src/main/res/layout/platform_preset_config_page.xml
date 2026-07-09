@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Per-element configuration for a single preset. Reached via the "CONFIGURE PRESET" nav
+     button on platform_pipeline_page. Scrolls if a preset has enough elements/options to
+     overflow the screen; SAVE PRESET is docked at the bottom regardless of scroll position. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/cuas_bg_dark">
+
+    <!-- Header bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="4dp"
+        android:paddingEnd="12dp"
+        android:background="@color/cuas_surface">
+
+        <TextView
+            android:id="@+id/back_button"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:paddingStart="10dp"
+            android:paddingEnd="14dp"
+            android:text="‹"
+            android:textColor="@color/white"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_settings"
+            android:tint="@color/white"
+            android:layout_marginEnd="8dp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="CONFIGURE PRESET"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:letterSpacing="0.06" />
+
+        <TextView
+            android:id="@+id/tv_config_preset_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="—"
+            android:textColor="@color/cuas_text_secondary"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/cuas_divider" />
+
+    <!-- Element cards, one per pipeline stage -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fadeScrollbars="false">
+
+        <LinearLayout
+            android:id="@+id/elements_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp" />
+    </ScrollView>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/cuas_divider" />
+
+    <!-- Save bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="@color/cuas_surface">
+
+        <TextView
+            android:id="@+id/btn_save_preset"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="SAVE PRESET"
+            android:textColor="@color/threat_minimal"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.04" />
+    </LinearLayout>
+
+</LinearLayout>

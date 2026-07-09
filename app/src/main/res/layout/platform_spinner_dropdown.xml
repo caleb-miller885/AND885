@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="42dp"
+    android:gravity="center_vertical"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:background="@color/cuas_card_bg"
+    android:textColor="@android:color/white"
+    android:textSize="13sp"
+    android:singleLine="true"
+    android:ellipsize="end" />

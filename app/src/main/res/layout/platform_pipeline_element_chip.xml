@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One stage of the pipeline strip. Background (accent-colored border) is set programmatically
+     depending on whether the strip is showing the live/running preset or a not-yet-loaded preview. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="104dp"
+    android:layout_height="76dp"
+    android:layout_marginEnd="8dp"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/tv_element_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="ELEMENT"
+        android:textColor="@color/cuas_text_secondary"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.04"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/tv_element_model"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:gravity="center"
+        android:text="—"
+        android:textColor="@android:color/white"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+</LinearLayout>

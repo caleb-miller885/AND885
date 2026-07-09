@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pipeline overview + preset selection for a single platform. Reached from the platform's
+     settings button on the landing page. "CONFIGURE PRESET" hands off to preset_config_page. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/cuas_bg_dark">
+
+    <!-- Header bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="46dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="4dp"
+        android:paddingEnd="12dp"
+        android:background="@color/cuas_surface">
+
+        <TextView
+            android:id="@+id/back_button"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:paddingStart="10dp"
+            android:paddingEnd="14dp"
+            android:text="‹"
+            android:textColor="@color/white"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true" />
+
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="PIPELINE"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:letterSpacing="0.06" />
+
+        <TextView
+            android:id="@+id/tv_platform_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PLATFORM"
+            android:textColor="@color/cuas_text_secondary"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/cuas_divider" />
+
+    <!-- Everything between the header and the CONFIGURE bar scrolls if it overflows a short
+         screen — CONFIGURE stays docked at the bottom either way. -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fadeScrollbars="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+    <!-- ══════════ Active preset + selector ══════════ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/cuas_card_bg"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="ACTIVE PRESET"
+                android:textColor="@color/cuas_text_secondary"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05" />
+
+            <View
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:background="@drawable/threat_dot_friendly"
+                android:layout_marginEnd="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="STATUS"
+                android:textColor="@color/threat_minimal"
+                android:textSize="8sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_active_preset_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="—"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <Spinner
+                android:id="@+id/spinner_preset"
+                android:layout_width="0dp"
+                android:layout_height="34dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/platform_spinner_bg"
+                android:spinnerMode="dropdown"
+                android:paddingStart="10dp"
+                android:paddingEnd="28dp" />
+
+            <TextView
+                android:id="@+id/btn_load"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:background="@drawable/btn_gray"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp"
+                android:text="LOAD"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/cuas_divider" />
+
+    <!-- ══════════ Pipeline status row ══════════ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:background="@color/cuas_surface_alt">
+
+        <View
+            android:id="@+id/pipeline_status_dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:layout_marginEnd="6dp" />
+
+        <TextView
+            android:id="@+id/tv_pipeline_status"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="PIPELINE — RUNNING"
+            android:textColor="@color/threat_minimal"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.03"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/tv_element_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 ELEMENTS"
+            android:textColor="@color/cuas_text_secondary"
+            android:textSize="9sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- ══════════ Pipeline strip (dynamic, horizontally scrollable) ══════════ -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/pipeline_strip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp" />
+    </HorizontalScrollView>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/cuas_divider" />
+
+    <!-- ══════════ Connection status (same strip format as pipeline status) ══════════ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:background="@color/cuas_surface_alt">
+
+        <View
+            android:id="@+id/connection_status_dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:layout_marginEnd="6dp" />
+
+        <TextView
+            android:id="@+id/tv_connection_status"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="DISCONNECTED"
+            android:textColor="@color/threat_critical"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.03"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/tv_connection_detail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="10dp"
+            android:text=""
+            android:textColor="@color/cuas_text_secondary"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/btn_edit_endpoint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="6dp"
+            android:paddingEnd="2dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:text="EDIT"
+            android:textColor="@color/search_area_accent"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05"
+            android:clickable="true"
+            android:focusable="true" />
+    </LinearLayout>
+
+    <!-- Collapsible endpoint editor, toggled by EDIT above -->
+    <LinearLayout
+        android:id="@+id/endpoint_edit_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:background="@color/cuas_surface_alt"
+        android:visibility="gone">
+
+        <EditText
+            android:id="@+id/et_platform_endpoint"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/rounded_button_bg"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:gravity="center_vertical"
+            android:inputType="textUri"
+            android:maxLines="1"
+            android:hint="host:port or https://..."
+            android:textColor="@color/white"
+            android:textColorHint="@color/cuas_text_secondary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/btn_connect"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:background="@drawable/btn_gray"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:text="CONNECT"
+            android:textColor="@color/white"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    </LinearLayout>
+    </ScrollView>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/cuas_divider" />
+
+    <!-- ══════════ Configure nav ══════════ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="@color/cuas_surface">
+
+        <TextView
+            android:id="@+id/btn_configure"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="CONFIGURE PRESET  ›"
+            android:textColor="@color/search_area_accent"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.04" />
+    </LinearLayout>
+
+</LinearLayout>

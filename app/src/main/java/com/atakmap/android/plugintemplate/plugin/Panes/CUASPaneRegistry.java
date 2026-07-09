@@ -1,14 +1,24 @@
 package com.atakmap.android.plugintemplate.plugin.Panes;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.plugintemplate.plugin.Constants;
 import com.atakmap.android.plugintemplate.plugin.HelperFunctions;
+import com.atakmap.android.plugintemplate.plugin.Models.MockPipelineData;
+import com.atakmap.android.plugintemplate.plugin.Platform.PlatformEntry;
+import com.atakmap.android.plugintemplate.plugin.Platform.PlatformPipelinePane;
+import com.atakmap.android.plugintemplate.plugin.Platform.PresetConfigPane;
+import com.atakmap.android.plugintemplate.plugin.Platform.Models.PipelinePreset;
 import com.atakmap.android.plugintemplate.plugin.Services.CUASServiceRegistry;
 
 import gov.tak.api.ui.IHostUIService;
@@ -25,6 +35,17 @@ public class CUASPaneRegistry {
     private AlertsPane  alertsPane;
     private SensorsPane sensorsPane;
     private SettingsPane settingsPane;
+
+    // ── Platform pipeline demo ───────────────────────────────────────────────
+    // Everything below is CUAS-local scaffolding to click-test the Platform/ package with mock
+    // data. platforms mirrors the host plugin's intended shape: a UID-keyed map of PlatformEntry
+    // (see LandingPane's own entries map for the same add/update/remove pattern driven off
+    // MapItem UID). currentPlatformUid is the "which platform is the single shared pane editing"
+    // pointer, matching how the host's real platformConfigPane is meant to work.
+    private PlatformPipelinePane platformPipelinePane;
+    private PresetConfigPane     presetConfigPane;
+    private final Map<String, PlatformEntry> platforms = new HashMap<>();
+    private String currentPlatformUid;
 
     public CUASPaneRegistry(IHostUIService uiService, Context pluginContext, CUASServiceRegistry services) {
         this.uiService     = uiService;
@@ -66,6 +87,56 @@ public class CUASPaneRegistry {
         return settingsPane;
     }
 
+    private PlatformPipelinePane getPlatformPipelinePane() {
+        if (platformPipelinePane == null)
+            platformPipelinePane = new PlatformPipelinePane(pluginContext, this);
+        return platformPipelinePane;
+    }
+
+    private PresetConfigPane getPresetConfigPane() {
+        if (presetConfigPane == null)
+            presetConfigPane = new PresetConfigPane(pluginContext, this);
+        return presetConfigPane;
+    }
+
+    // ── Platform pipeline / preset actions ───────────────────────────────────
+    // Called directly by PlatformPipelinePane / PresetConfigPane (they hold a CUASPaneRegistry
+    // reference — swap that type when Platform/ is transferred into the host plugin).
+
+    public void loadPreset(PipelinePreset preset) {
+        PlatformEntry entry = platforms.get(currentPlatformUid);
+        if (entry == null) return;
+        entry.activePreset = preset;
+        getPlatformPipelinePane().setActivePreset(preset);
+        Toast.makeText(pluginContext, "Loaded preset: " + preset.name, Toast.LENGTH_SHORT).show();
+    }
+
+    public void showPresetConfig(PipelinePreset preset) {
+        PresetConfigPane cfg = getPresetConfigPane();
+        Pane pane = cfg.getPane();
+        cfg.setPreset(preset);
+        if (uiService != null && !uiService.isPaneVisible(pane))
+            uiService.showPane(pane, null);
+    }
+
+    public void connectEndpoint(String endpoint) {
+        PlatformEntry entry = platforms.get(currentPlatformUid);
+        if (entry == null) return;
+        entry.endpoint = endpoint;
+        entry.connectionState = PlatformEntry.ConnectionState.CONNECTING;
+        getPlatformPipelinePane().setConnectionStatus(entry.connectionState, endpoint);
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            entry.connectionState = PlatformEntry.ConnectionState.CONNECTED;
+            getPlatformPipelinePane().setConnectionStatus(entry.connectionState, endpoint);
+            Toast.makeText(pluginContext, "Connected: " + endpoint, Toast.LENGTH_SHORT).show();
+        }, 900);
+    }
+
+    public void savePreset(PipelinePreset preset) {
+        Toast.makeText(pluginContext, "Saved preset: " + preset.name, Toast.LENGTH_SHORT).show();
+        showPlatformPipelinePane();
+    }
+
     // ── Show panes ────────────────────────────────────────────────────────────
 
     public void showLandingPane() {
@@ -94,6 +165,31 @@ public class CUASPaneRegistry {
 
     public void showSettingsPane() {
         Pane pane = getSettingsPane().getPane();
+        if (uiService != null && !uiService.isPaneVisible(pane))
+            uiService.showPane(pane, null);
+    }
+
+    /**
+     * Demo entry point — stands in for "settings button on a platform row" in the host plugin.
+     * Real usage would be showPlatformPipelinePane(String uid) called from the landing page's
+     * per-platform settings button; this seeds one mock PlatformEntry the first time it's opened.
+     */
+    public void showPlatformPipelinePane() {
+        PlatformEntry entry = platforms.get("demo-platform-1");
+        if (entry == null) {
+            entry = new PlatformEntry("demo-platform-1");
+            entry.name = "SKYRAIDER-3 (DEMO)";
+            entry.endpoint = "10.1.2.30:8080";
+            entry.connectionState = PlatformEntry.ConnectionState.CONNECTED;
+            entry.availablePresets = MockPipelineData.buildSamplePresets();
+            entry.activePreset = entry.availablePresets.get(0);
+            platforms.put(entry.uid, entry);
+        }
+        currentPlatformUid = entry.uid;
+
+        PlatformPipelinePane p = getPlatformPipelinePane();
+        Pane pane = p.getPane();
+        p.bind(entry);
         if (uiService != null && !uiService.isPaneVisible(pane))
             uiService.showPane(pane, null);
     }
@@ -176,5 +272,9 @@ public class CUASPaneRegistry {
         if (alertsPane  != null) { alertsPane.clearItems();  alertsPane  = null; }
         if (sensorsPane != null) { sensorsPane.clearItems(); sensorsPane = null; }
         if (settingsPane != null) { settingsPane.clearItems(); settingsPane = null; }
+        if (platformPipelinePane != null) { platformPipelinePane.clearItems(); platformPipelinePane = null; }
+        if (presetConfigPane != null) { presetConfigPane.clearItems(); presetConfigPane = null; }
+        platforms.clear();
+        currentPlatformUid = null;
     }
 }

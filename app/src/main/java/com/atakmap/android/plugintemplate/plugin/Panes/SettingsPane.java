@@ -52,6 +52,9 @@ public class SettingsPane {
         root.findViewById(R.id.btn_save_reclassification_threshold)
                 .setOnClickListener(v -> onSaveThreshold());
 
+        root.findViewById(R.id.btn_open_pipeline_demo)
+                .setOnClickListener(v -> registry.showPlatformPipelinePane());
+
         root.findViewById(R.id.nav_drones).setOnClickListener(v -> registry.showLandingPane());
         root.findViewById(R.id.nav_pending).setOnClickListener(v -> registry.showPendingPane());
         root.findViewById(R.id.nav_sensors).setOnClickListener(v -> registry.showSensorsPane());
