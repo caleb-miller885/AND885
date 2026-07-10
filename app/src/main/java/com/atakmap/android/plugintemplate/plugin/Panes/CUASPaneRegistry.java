@@ -17,6 +17,7 @@ import com.atakmap.android.plugintemplate.plugin.HelperFunctions;
 import com.atakmap.android.plugintemplate.plugin.Models.MockPipelineData;
 import com.atakmap.android.plugintemplate.plugin.Platform.PlatformEntry;
 import com.atakmap.android.plugintemplate.plugin.Platform.PlatformPipelinePane;
+import com.atakmap.android.plugintemplate.plugin.Platform.PlatformStore;
 import com.atakmap.android.plugintemplate.plugin.Platform.PresetConfigPane;
 import com.atakmap.android.plugintemplate.plugin.Platform.Models.PipelinePreset;
 import com.atakmap.android.plugintemplate.plugin.Platform.Network.PlatformApiClient;
@@ -51,11 +52,13 @@ public class CUASPaneRegistry {
     private PresetConfigPane     presetConfigPane;
     private final Map<String, PlatformEntry> platforms = new HashMap<>();
     private String currentPlatformUid;
+    private final PlatformStore platformStore;
 
     public CUASPaneRegistry(IHostUIService uiService, Context pluginContext, CUASServiceRegistry services) {
         this.uiService     = uiService;
         this.pluginContext = pluginContext;
         this.services      = services;
+        this.platformStore = new PlatformStore(pluginContext);
         services.cotProcessor.setReclassificationListener(this::onReclassificationRequired);
         services.cotProcessor.setPendingItemListener(this::onPendingItemUpdated);
     }
@@ -125,12 +128,24 @@ public class CUASPaneRegistry {
             uiService.showPane(pane, null);
     }
 
+    /** User pressed CONNECT in the pipeline pane for whichever platform is currently open. */
     public void connectEndpoint(String endpoint) {
         PlatformEntry entry = platforms.get(currentPlatformUid);
         if (entry == null) return;
         entry.endpoint = endpoint;
+        platformStore.save(entry.uid, entry.name, endpoint);
+        fetchStatus(entry, endpoint);
+    }
+
+    /**
+     * Hits GET {endpoint}/status for the given platform. Shared by the manual CONNECT flow above
+     * and the auto-reconnect-on-seen flow below — entry is never assumed to be the platform whose
+     * pane is currently open, so every UI touch here is gated on entry.uid == currentPlatformUid.
+     */
+    private void fetchStatus(PlatformEntry entry, String endpoint) {
         entry.connectionState = PlatformEntry.ConnectionState.CONNECTING;
-        getPlatformPipelinePane().setConnectionStatus(entry.connectionState, endpoint);
+        if (entry.uid.equals(currentPlatformUid))
+            getPlatformPipelinePane().setConnectionStatus(entry.connectionState, endpoint);
 
         String base = endpoint.startsWith("http") ? endpoint : "http://" + endpoint;
         String url  = base.endsWith("/") ? base + "status" : base + "/status";
@@ -210,23 +225,51 @@ public class CUASPaneRegistry {
             uiService.showPane(pane, null);
     }
 
+
+    //Needs to be tied into the platform added call
+    public void onPlatformSeen(String uid, String name) {
+        PlatformEntry entry = platforms.get(uid);
+        boolean firstThisSession = entry == null;
+        if (firstThisSession) {
+            entry = new PlatformEntry(uid);
+            platforms.put(uid, entry);
+        }
+        entry.name = name;
+
+        if (firstThisSession && entry.endpoint == null) {
+            String savedEndpoint = platformStore.getEndpoint(uid);
+            if (savedEndpoint != null) {
+                entry.endpoint = savedEndpoint;
+                fetchStatus(entry, savedEndpoint);
+            }
+        }
+    }
+
+    /** The host settings screen's DELETE action for a saved platform. */
+    public void forgetPlatform(String uid) {
+        platforms.remove(uid);
+        platformStore.forget(uid);
+    }
+
     /**
      * Demo entry point — stands in for "settings button on a platform row" in the host plugin.
      * Real usage would be showPlatformPipelinePane(String uid) called from the landing page's
-     * per-platform settings button; this seeds one mock PlatformEntry the first time it's opened.
+     * per-platform settings button. Routes through onPlatformSeen so the demo shows the real
+     * behavior: no endpoint (and no presets) until you configure + CONNECT one, and — if you'd
+     * previously connected in an earlier run of the app — an automatic reconnect using whatever
+     * PlatformStore remembers.
      */
     public void showPlatformPipelinePane() {
-        PlatformEntry entry = platforms.get("demo-platform-1");
-        if (entry == null) {
-            entry = new PlatformEntry("demo-platform-1");
-            entry.name = "SKYRAIDER-3 (DEMO)";
-            entry.endpoint = "10.1.2.30:8080";
-            entry.connectionState = PlatformEntry.ConnectionState.CONNECTED;
+        String uid = "demo-platform-1";
+        onPlatformSeen(uid, "SKYRAIDER-3 (DEMO)");
+
+        PlatformEntry entry = platforms.get(uid);
+        if (entry.availablePresets.isEmpty())
             entry.availablePresets = MockPipelineData.buildSamplePresets();
+        if (entry.activePreset == null)
             entry.activePreset = entry.availablePresets.get(0);
-            platforms.put(entry.uid, entry);
-        }
-        currentPlatformUid = entry.uid;
+
+        currentPlatformUid = uid;
 
         PlatformPipelinePane p = getPlatformPipelinePane();
         Pane pane = p.getPane();
