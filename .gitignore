@@ -1,0 +1,11 @@
+*.iml
+.gradle/
+/build/
+/app/build/
+/local.properties
+.cxx/
+captures/
+.externalNativeBuild/
+
+# Large map data files - too big for GitHub (see docs), distributed separately
+app/src/main/java/com/atakmap/android/plugintemplate/plugin/Platform/adl.sqlite
