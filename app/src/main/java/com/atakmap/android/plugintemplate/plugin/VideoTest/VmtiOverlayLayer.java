@@ -27,25 +27,8 @@ import java.util.Map;
 
 import gov.tak.api.video.ConnectionEntry;
 
-/**
- * Draws VMTI target boxes on top of the video, using the VMTI data ATAK pulls out of the KLV metadata (ST0601 tag 74 -> nested ST0903 VMTI Local Set).
- *
- * Registered once via VideoDropDownReceiver.registerVideoViewLayer(...) in main plugin class
- * onStart(). The VMTI layer only exist at all if the video's linked MapItem has the specified platform meta-tag - see start() below.
- *
- * VMTIDataset:
- *  - frameWidth / frameHeight: the pixel size the target coords below are relative to
- *  - timestamp, systemName, sensorName: not using these
- *  - targets[]: one per detected target this frame, each one has:
- *      - targetId: numeric id
- *      - centroidPixelRow / centroidPixelCol: center point, already split into row/col for us
- *      - centroidPixelLoc: same center point but packed into one number (see
- *        checkPolygonPacking() below, that's the annoying bit)
- *      - polygonPoints: the box corners, packed the same way as centroidPixelLoc - this is
- *        what actually becomes the box you see on screen
- *      - lat / lon / haeMeters: real world position if the sensor sends it, not drawing this,
- *
- */
+
+
 public class VmtiOverlayLayer extends VideoViewLayer {
 
     private final VmtiOverlayView overlay;
@@ -69,8 +52,7 @@ public class VmtiOverlayLayer extends VideoViewLayer {
         overlay.reset();
 
         // Assumes ConnectionEntry.getUID() matches the marker's own UID - true for videos
-        // launched via a <__video sensor="..."/> CoT detail (which is how the marker gets
-        // linked to the video in the first place), unconfirmed for anything else.
+        // launched via a <__video sensor="..."/> CoT detail (which is how the marker gets linked to the video in the first place), unconfirmed for anything else.
         String uid = connectionEntry != null ? connectionEntry.getUID() : null;
         MapItem item = uid != null ? MapView.getMapView().getRootGroup().deepFindUID(uid) : null;
         overlay.setPlatformMatched(item != null && item.hasMetaValue(Constants.UAS_ITEM));
@@ -91,6 +73,7 @@ public class VmtiOverlayLayer extends VideoViewLayer {
         overlay.setViewMatrix(new Matrix(matrix)); // ATAK reuses its own Matrix object
     }
 
+    //Get all of the VMTI targets from the overall KLV metadata
     @Override
     public void metadataChanged(final KLVData rawData,
             final Map<DecodedMetadataItem.MetadataItemIDs, DecodedMetadataItem> items) {
@@ -293,14 +276,6 @@ public class VmtiOverlayLayer extends VideoViewLayer {
             Matrix m = viewMatrix;
             if (m != null) canvas.concat(m);
             canvas.scale(getWidth() / (float) vw, getHeight() / (float) vh);
-            // Box coords below are drawn in "declared frame space" (0..frameWidth,
-            // 0..frameHeight, from the KLV's own tags 8/9) - normally that's the same raster
-            // as the actual decoded video (vw x vh), but isn't guaranteed to be (e.g. a real
-            // sensor's declared frame size vs. what got decoded, or a test fixture authored
-            // against a different resolution than what it's muxed alongside here). This
-            // second scale converts frame-space into video-pixel-space before the stretch
-            // above takes it the rest of the way to view-space; it's a no-op when
-            // frameWidth/frameHeight already match vw/vh, which is the common case.
             canvas.scale(vw / (float) frameWidth, vh / (float) frameHeight);
 
             for (VMTIDataset.Target t : ds.targets) {
