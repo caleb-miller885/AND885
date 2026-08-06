@@ -9,3 +9,6 @@ captures/
 
 # Large map data files - too big for GitHub (see docs), distributed separately
 app/src/main/java/com/atakmap/android/plugintemplate/plugin/Platform/adl.sqlite
+
+# Python bytecode cache for VideoTest/*.py
+app/src/main/java/com/atakmap/android/plugintemplate/plugin/VideoTest/__pycache__/

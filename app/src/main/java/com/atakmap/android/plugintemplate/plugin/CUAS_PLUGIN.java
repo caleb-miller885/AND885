@@ -10,6 +10,9 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.plugintemplate.plugin.Panes.CUASPaneRegistry;
 import com.atakmap.android.plugintemplate.plugin.Services.CUASServiceRegistry;
+import com.atakmap.android.plugintemplate.plugin.VideoTest.VmtiOverlayLayer;
+import com.atakmap.android.plugintemplate.plugin.VideoTest.VmtiPlatformTest;
+import com.atakmap.android.video.VideoDropDownReceiver;
 
 import java.util.List;
 
@@ -35,6 +38,8 @@ public class CUAS_PLUGIN implements IPlugin {
     private CUASPaneRegistry paneRegistry;
     private DroneSim droneSim;
     private DroneExportTest droneExportTest;
+    private VmtiOverlayLayer vmtiOverlayLayer;
+    private VmtiPlatformTest vmtiPlatformTest;
 
     private final MapEventDispatcher.MapEventDispatchListener droneAddedListener = event -> {
         MapItem item = event.getItem();
@@ -136,6 +141,12 @@ public class CUAS_PLUGIN implements IPlugin {
 
         droneExportTest = new DroneExportTest(mv, services.cotProcessor);
         droneExportTest.start();
+
+        vmtiOverlayLayer = new VmtiOverlayLayer(pluginContext);
+        VideoDropDownReceiver.registerVideoViewLayer(vmtiOverlayLayer);
+
+        vmtiPlatformTest = new VmtiPlatformTest();
+        vmtiPlatformTest.start();
     }
 
     @Override
@@ -144,6 +155,11 @@ public class CUAS_PLUGIN implements IPlugin {
 
         if (droneSim != null) { droneSim.stop(); droneSim = null; }
         if (droneExportTest != null) { droneExportTest.stop(); droneExportTest = null; }
+
+        if (vmtiOverlayLayer != null) {
+            VideoDropDownReceiver.unregisterVideoViewLayer(vmtiOverlayLayer);
+            vmtiOverlayLayer = null;
+        }
 
 
         if (services != null) { services.onStop(); services = null; }
