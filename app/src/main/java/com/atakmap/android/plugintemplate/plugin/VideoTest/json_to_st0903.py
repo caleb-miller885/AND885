@@ -171,9 +171,6 @@ def encode_vtarget(target_id: int, centroid_row: int, centroid_col: int,
     return ber_length(len(pack)) + pack
 
 
-VMTI_LS_VERSION = 6  # "6" = ST0903.6, per the spec's own vmtiLsVersionNum example
-
-
 def build_vmti_local_set(frame_width: int, frame_height: int,
                           vtarget_packs: list, ontologies: list = None) -> bytes:
     # VMTI LS body (Table 9), goes under ST0601 tag 74. This is
@@ -181,8 +178,14 @@ def build_vmti_local_set(frame_width: int, frame_height: int,
     # must be OMITTED for embedded-VMTI, only standalone-VMTI sends it, so
     # it's correctly never sent below.
     #
-    # vmtiLsVersionNum (tag 4) is unconditionally mandatory - "All instances
-    # of the VMTI LS shall contain vmtiLsVersionNum" (ST 0903.5-99).
+    # NOT sending vmtiLsVersionNum (tag 4): the spec calls it mandatory
+    # (ST 0903.5-99), but it's a field the previously-proven-working encoder
+    # (misb0601.py, confirmed rendering real boxes on-device) never sent
+    # either, and pgscmedia has repeatedly turned out to be a non-generic,
+    # quirky decoder rather than a fully spec-compliant TLV walker (see
+    # e.g. VMTI_ENCODING_SCHEMA.md's BER-length-before-ID story). Prefer
+    # exact parity with the last known-on-device-working wire format over
+    # an unverified spec addition.
     #
     # frameWidth/frameHeight (tags 8/9) are Vmax (minimal-be), not a fixed
     # byte count - e.g. the spec's own 1920 example encodes to exactly 2 bytes.
@@ -192,7 +195,6 @@ def build_vmti_local_set(frame_width: int, frame_height: int,
     # id, encoded as tag 103 (ontologySeries).
     num_targets = len(vtarget_packs)
     body = bytearray()
-    body += tlv(4, minimal_be(VMTI_LS_VERSION))        # vmtiLsVersionNum (mandatory)
     body += tlv(3, b"JSON-TO-ST0903")                  # VMTI system name/description
     body += tlv(5, minimal_be(min(num_targets, 255)))  # total targets detected
     body += tlv(6, minimal_be(min(num_targets, 255)))  # number of reported targets
@@ -464,11 +466,22 @@ def json_record_to_klv_packet(record: dict) -> bytes:
 # tsdemux's raw byte-stream H.264 pad otherwise. Assumes H.264 video
 # passthrough - for a different codec, swap h264parse/video/x-h264 for the
 # matching parser+caps (e.g. h265parse/video/x-h265).
+#
+# is-live=true block=true on the KLV appsrc (not is-live=false as an earlier
+# version of this had): matches the proven-working live pipeline exactly
+# (webcam_klv_server.py) -- is-live affects how mpegtsmux computes each
+# packet's PCR (Program Clock Reference), and an is-live=false mux was
+# confirmed on-device to produce a KLV track pgscmedia's demuxer discovers
+# fine (FORMAT_KLV shows up, video decodes) but never actually delivers a
+# single decoded metadata unit from (VmtiOverlayLayer.metadataChanged()
+# never fires) -- while the exact same content muxed is-live=true worked
+# immediately. block=true gives the appsrc real backpressure instead of
+# silently dropping buffers pushed faster than the mux can drain them.
 OUTPUT_PIPELINE = (
     "filesrc location={in_path} ! tsdemux name=demux "
     "demux. ! queue ! h264parse config-interval=-1 "
     "! video/x-h264,stream-format=byte-stream,alignment=au ! mux. "
-    "appsrc name=klvsrc format=time is-live=false do-timestamp=false "
+    "appsrc name=klvsrc format=time is-live=true block=true do-timestamp=false "
     "caps=meta/x-klv,parsed=(boolean)true "
     "! queue ! mux. "
     "mpegtsmux name=mux alignment=7 "
