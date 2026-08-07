@@ -136,7 +136,6 @@ def start_klv_http_server():
         appsink = pipeline.get_by_name("tssink")
         klvsrc = pipeline.get_by_name("klvsrc")
         state["pipeline"] = pipeline
-        video_started = {"flag": False}
 
         state["start_time"] = time.monotonic()
 
@@ -151,12 +150,6 @@ def start_klv_http_server():
             return True
 
         def on_new_sample(sink):
-            if not video_started["flag"]:
-                video_started["flag"] = True
-                push_klv()
-                state["timeout_id"] = GLib.timeout_add(
-                    int(KLV_PUSH_INTERVAL_S * 1000), push_klv)
-
             sample = sink.emit("pull-sample")
             buf = sample.get_buffer()
             ok, mapinfo = buf.map(Gst.MapFlags.READ)
@@ -189,6 +182,9 @@ def start_klv_http_server():
         bus.connect("message", on_bus_message)
 
         pipeline.set_state(Gst.State.PLAYING)
+        push_klv()
+        state["timeout_id"] = GLib.timeout_add(
+            int(KLV_PUSH_INTERVAL_S * 1000), push_klv)
 
         return False
 
