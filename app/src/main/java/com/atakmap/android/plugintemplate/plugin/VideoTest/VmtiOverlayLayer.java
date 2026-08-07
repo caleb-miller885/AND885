@@ -8,7 +8,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -23,6 +22,7 @@ import com.partech.pgscmedia.frameaccess.DecodedMetadataItem;
 import com.partech.pgscmedia.frameaccess.KLVData;
 import com.partech.pgscmedia.frameaccess.VMTIDataset;
 
+import java.util.Collections;
 import java.util.Map;
 
 import gov.tak.api.video.ConnectionEntry;
@@ -90,6 +90,21 @@ public class VmtiOverlayLayer extends VideoViewLayer {
             return;
 
         overlay.setDataset((VMTIDataset) value);
+
+
+        //The Partech decoder shipped with ATAK only supports:
+            //Target ID
+            //Centroid
+            //Bounding box coords
+
+        //ST0903 allows for more advanced fields such as
+            //Confidence
+            // priority
+            // label
+
+        //Custom KLV decoder for remaining ST0903 fields
+        byte[] raw = rawData != null ? rawData.getValue() : null;
+        overlay.setExtras(raw != null ? St0903KlvDecoder.parse(raw) : null);
     }
 
     //Rendered layer over top of the video feed, contains VMTI boxes along with the toggle button
@@ -171,12 +186,13 @@ public class VmtiOverlayLayer extends VideoViewLayer {
 
             hostControlsTop = highestBottomOccupantTop;
             FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) showButton.getLayoutParams();
-            params.bottomMargin = (root.getHeight() - hostControlsTop) + dp(5);
+            params.bottomMargin = (root.getHeight() - hostControlsTop);
             showButton.setLayoutParams(params);
         }
 
         void reset() {
             boxesView.setDataset(null);
+            boxesView.setExtras(null);
             boxesView.setShowVmti(false);
             showButton.setSelected(false);
         }
@@ -193,6 +209,10 @@ public class VmtiOverlayLayer extends VideoViewLayer {
             boxesView.setDataset(ds);
         }
 
+        void setExtras(Map<Integer, St0903KlvDecoder.TargetExtra> extras) {
+            boxesView.setExtras(extras);
+        }
+
         void setPlatformMatched(boolean matched) {
             showButton.setVisibility(matched ? VISIBLE : GONE);
         }
@@ -203,12 +223,15 @@ public class VmtiOverlayLayer extends VideoViewLayer {
     private static class BoxesView extends View {
 
         private final Paint boxPaint = new Paint();
-        private final Paint textPaint = new Paint();
+        private final Paint labelPaint = new Paint();
+        private final Paint confidencePaint = new Paint();
+        private final Paint priorityPaint = new Paint();
 
         private volatile Matrix viewMatrix;
         private volatile int videoWidth;
         private volatile int videoHeight;
         private volatile VMTIDataset dataset;
+        private volatile Map<Integer, St0903KlvDecoder.TargetExtra> extras = Collections.emptyMap();
 
         private volatile boolean showVmti = false;
 
@@ -218,9 +241,20 @@ public class VmtiOverlayLayer extends VideoViewLayer {
             boxPaint.setStyle(Paint.Style.STROKE);
             boxPaint.setAntiAlias(true);
 
-            textPaint.setColor(Color.RED);
-            textPaint.setAntiAlias(true);
-            textPaint.setFakeBoldText(true);
+            labelPaint.setColor(Color.WHITE);
+            labelPaint.setAntiAlias(true);
+            labelPaint.setFakeBoldText(true);
+            labelPaint.setShadowLayer(3f, 0, 0, Color.BLACK);
+
+            // color set per-draw based on confidence tier, see confidenceColor()
+            confidencePaint.setAntiAlias(true);
+            confidencePaint.setFakeBoldText(true);
+            confidencePaint.setShadowLayer(3f, 0, 0, Color.BLACK);
+
+            priorityPaint.setColor(Color.rgb(255, 165, 0));
+            priorityPaint.setAntiAlias(true);
+            priorityPaint.setFakeBoldText(true);
+            priorityPaint.setShadowLayer(3f, 0, 0, Color.BLACK);
         }
 
         boolean isShowVmti() {
@@ -248,6 +282,11 @@ public class VmtiOverlayLayer extends VideoViewLayer {
             postInvalidate();
         }
 
+        void setExtras(Map<Integer, St0903KlvDecoder.TargetExtra> e) {
+            extras = e != null ? e : Collections.emptyMap();
+            postInvalidate();
+        }
+
         @Override
         protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
@@ -267,7 +306,10 @@ public class VmtiOverlayLayer extends VideoViewLayer {
             int frameHeight = ds.frameHeight > 0 ? ds.frameHeight : vh;
 
             boxPaint.setStrokeWidth(Math.max(1f, frameWidth / 400f));
-            textPaint.setTextSize(Math.max(12f, frameWidth / 60f));
+            float textSize = Math.max(12f, frameWidth / 60f);
+            labelPaint.setTextSize(textSize);
+            confidencePaint.setTextSize(textSize);
+            priorityPaint.setTextSize(textSize);
 
             canvas.save();
 
@@ -278,43 +320,99 @@ public class VmtiOverlayLayer extends VideoViewLayer {
             canvas.scale(getWidth() / (float) vw, getHeight() / (float) vh);
             canvas.scale(vw / (float) frameWidth, vh / (float) frameHeight);
 
+            Map<Integer, St0903KlvDecoder.TargetExtra> extrasSnapshot = extras;
             for (VMTIDataset.Target t : ds.targets) {
                 if (t != null)
-                    drawTarget(canvas, t, frameWidth, frameHeight);
+                    drawTarget(canvas, t, frameWidth, frameHeight, extrasSnapshot);
             }
 
             canvas.restore();
         }
 
+        // Draws one target: its box/contour (pgscmedia-decoded geometry, always available).
+        //Then each ST0903.6 field pgscmedia doesn't decode (label/confidence/priority, recovered by St0903RawFields
         private void drawTarget(Canvas canvas, VMTIDataset.Target t,
-                int frameWidth, int frameHeight) {
+                int frameWidth, int frameHeight,
+                Map<Integer, St0903KlvDecoder.TargetExtra> extrasSnapshot) {
             float[] box = null;
             if (t.polygonPoints != null && t.polygonPoints.length >= 2)
                 box = decodePolygon(t.polygonPoints, frameWidth);
 
-            //If box defined as LL and UR coords
+            float anchorX;
+            float anchorY;
             if (box != null && box.length == 4) {
-                canvas.drawRect(box[0], box[1], box[2], box[3], boxPaint);
-                canvas.drawText(String.valueOf(t.targetId), box[0], box[1] - 4, textPaint);
-
-            //Handle fully defined box
+                //Box defined as LL and UR coords
+                drawBoundingBox(canvas, box[0], box[1], box[2], box[3]);
+                anchorX = box[0];
+                anchorY = box[1];
             } else if (box != null) {
-                Path path = new Path();
-                path.moveTo(box[0], box[1]);
-                for (int i = 2; i < box.length; i += 2)
-                    path.lineTo(box[i], box[i + 1]);
-                path.close();
-                canvas.drawPath(path, boxPaint);
-                canvas.drawText(String.valueOf(t.targetId), box[0], box[1] - 4, textPaint);
-
-            //If given a center location but no bounding box just draw a small rect with classifier (bound unknown)
+                //Fully defined contour (more than 2 points)
+                drawContour(canvas, box);
+                anchorX = box[0];
+                anchorY = box[1];
             } else {
+                //Given a center location but no bounding box: small square, bound unknown
                 float half = Math.max(frameWidth, frameHeight) / 40f;
                 float cx = t.centroidPixelCol;
                 float cy = t.centroidPixelRow;
-                canvas.drawRect(cx - half, cy - half, cx + half, cy + half, boxPaint);
-                canvas.drawText(String.valueOf(t.targetId), cx - half, cy - half - 4, textPaint);
+                drawBoundingBox(canvas, cx - half, cy - half, cx + half, cy + half);
+                anchorX = cx - half;
+                anchorY = cy - half;
             }
+
+            St0903KlvDecoder.TargetExtra extra = extrasSnapshot.get(t.targetId);
+            float lineHeight = labelPaint.getTextSize() * 1.15f;
+            float y = anchorY - 4;
+            y -= drawObjectLabel(canvas, anchorX, y, t.targetId, extra, lineHeight);
+            y -= drawConfidence(canvas, anchorX, y, extra, lineHeight);
+            drawPriority(canvas, anchorX, y, extra, lineHeight);
+        }
+
+        private void drawBoundingBox(Canvas canvas, float left, float top, float right, float bottom) {
+            canvas.drawRect(left, top, right, bottom, boxPaint);
+        }
+
+        private void drawContour(Canvas canvas, float[] points) {
+            Path path = new Path();
+            path.moveTo(points[0], points[1]);
+            for (int i = 2; i < points.length; i += 2)
+                path.lineTo(points[i], points[i + 1]);
+            path.close();
+            canvas.drawPath(path, boxPaint);
+        }
+
+
+        private float drawObjectLabel(Canvas canvas, float x, float y, int targetId,
+                                      St0903KlvDecoder.TargetExtra extra, float lineHeight) {
+            String label = extra != null && extra.label != null ? extra.label : ("Target " + targetId);
+            canvas.drawText(label, x, y, labelPaint);
+            return lineHeight;
+        }
+
+
+        private float drawConfidence(Canvas canvas, float x, float y,
+                                     St0903KlvDecoder.TargetExtra extra, float lineHeight) {
+            if (extra == null || extra.confidence < 0)
+                return 0f;
+            confidencePaint.setColor(confidenceColor(extra.confidence));
+            canvas.drawText(extra.confidence + "% conf", x, y, confidencePaint);
+            return lineHeight;
+        }
+
+        private float drawPriority(Canvas canvas, float x, float y,
+                                   St0903KlvDecoder.TargetExtra extra, float lineHeight) {
+            if (extra == null || extra.priority < 0)
+                return 0f;
+            canvas.drawText("priority " + extra.priority, x, y, priorityPaint);
+            return lineHeight;
+        }
+
+        private static int confidenceColor(int confidencePercent) {
+            if (confidencePercent >= 75)
+                return Color.rgb(80, 220, 100);  // green: high confidence
+            if (confidencePercent >= 40)
+                return Color.rgb(240, 200, 60);  // amber: medium confidence
+            return Color.rgb(240, 80, 80);       // red: low confidence
         }
 
         // Target corners come as a single "pixel number" instead of (row, col): pixel 1 is the top-left corner of the frame.
