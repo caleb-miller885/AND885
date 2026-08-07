@@ -92,29 +92,9 @@ KLV_PIPELINE = (
 
 
 def start_klv_http_server():
-    state = {"proc": None, "pipeline": None, "timeout_id": None,
-              "rebuild_scheduled": False}
-
-    def teardown():
-        if state["timeout_id"] is not None:
-            GLib.source_remove(state["timeout_id"])
-            state["timeout_id"] = None
-        if state["pipeline"] is not None:
-            state["pipeline"].set_state(Gst.State.NULL)
-            state["pipeline"] = None
-        if state["proc"] is not None:
-            try:
-                state["proc"].stdin.close()
-            except (BrokenPipeError, OSError):
-                pass
-            if state["proc"].poll() is None:
-                state["proc"].terminate()
-            state["proc"] = None
+    state = {"proc": None, "pipeline": None, "timeout_id": None}
 
     def start_connection():
-        state["rebuild_scheduled"] = False
-        teardown()
-
         proc = subprocess.Popen(
             ["ffmpeg", "-f", "mpegts", "-i", "pipe:0",
              "-map", "0", "-c", "copy",
@@ -137,12 +117,12 @@ def start_klv_http_server():
         klvsrc = pipeline.get_by_name("klvsrc")
         state["pipeline"] = pipeline
 
-        state["start_time"] = time.monotonic()
+        start_time = time.monotonic()
 
         def push_klv():
             if state["pipeline"] is not pipeline:
                 return False
-            t = time.monotonic() - state["start_time"]
+            t = time.monotonic() - start_time
             packet = build_klv_packet(t)
             buf = Gst.Buffer.new_wrapped(packet)
             buf.pts = int(t * Gst.SECOND)
@@ -158,22 +138,17 @@ def start_klv_http_server():
                     proc.stdin.write(mapinfo.data)
                     proc.stdin.flush()
                 except (BrokenPipeError, ValueError):
-                    if state["pipeline"] is pipeline and not state["rebuild_scheduled"]:
-                        state["rebuild_scheduled"] = True
-                        print("[klv] client disconnected -- rebuilding "
-                              "encode for the next connection")
-                        GLib.idle_add(start_connection)
+                    print("[klv] client disconnected -- exiting so the "
+                          "wrapper script can restart the server")
+                    proc.kill()
+                    os._exit(0)
                 buf.unmap(mapinfo)
             return Gst.FlowReturn.OK
 
         appsink.connect("new-sample", on_new_sample)
 
         def on_bus_message(bus, message):
-            if message.type == Gst.MessageType.EOS:
-                print("[klv] source file ended, seeking back to loop")
-                pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, 0)
-                state["start_time"] = time.monotonic()
-            elif message.type == Gst.MessageType.ERROR:
+            if message.type == Gst.MessageType.ERROR:
                 err, debug = message.parse_error()
                 print(f"[klv] pipeline error: {err} {debug}")
 
@@ -185,8 +160,6 @@ def start_klv_http_server():
         push_klv()
         state["timeout_id"] = GLib.timeout_add(
             int(KLV_PUSH_INTERVAL_S * 1000), push_klv)
-
-        return False
 
     start_connection()
     return state
