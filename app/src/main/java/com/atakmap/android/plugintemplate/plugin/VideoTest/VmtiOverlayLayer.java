@@ -8,6 +8,7 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -77,19 +78,29 @@ public class VmtiOverlayLayer extends VideoViewLayer {
     @Override
     public void metadataChanged(final KLVData rawData,
             final Map<DecodedMetadataItem.MetadataItemIDs, DecodedMetadataItem> items) {
+        // temporary diagnostic - remove once VMTI delivery is confirmed working again
+        Log.i("VmtiOverlayLayer", "metadataChanged: items=" + (items == null ? "null" : items.size())
+                + " rawLen=" + (rawData != null && rawData.getValue() != null ? rawData.getValue().length : -1));
+
         if (items == null)
             return;
 
         DecodedMetadataItem item = items.get(
                 DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_VMTI_TARGET_SET);
+        Log.i("VmtiOverlayLayer", "metadataChanged: VMTI_TARGET_SET item=" + (item == null ? "null" : "present"));
         if (item == null)
             return;
 
         Object value = item.getValue();
+        Log.i("VmtiOverlayLayer", "metadataChanged: value class=" + (value == null ? "null" : value.getClass().getName()));
         if (!(value instanceof VMTIDataset))
             return;
 
-        overlay.setDataset((VMTIDataset) value);
+        VMTIDataset ds = (VMTIDataset) value;
+        Log.i("VmtiOverlayLayer", "metadataChanged: VMTIDataset frameWidth=" + ds.frameWidth
+                + " frameHeight=" + ds.frameHeight
+                + " targets=" + (ds.targets == null ? "null" : ds.targets.length));
+        overlay.setDataset(ds);
 
 
         //The Partech decoder shipped with ATAK only supports:
@@ -194,7 +205,10 @@ public class VmtiOverlayLayer extends VideoViewLayer {
             boxesView.setDataset(null);
             boxesView.setExtras(null);
             boxesView.setShowVmti(false);
-            showButton.setSelected(false);
+            // start()/stop() can run on ATAK's background "video-reconnect" thread, not just
+            // the UI thread - View.setSelected() isn't safe to call off the UI thread, unlike
+            // the postInvalidate() calls above. post() is safe from any thread.
+            showButton.post(() -> showButton.setSelected(false));
         }
 
         void setVideoSize(int w, int h) {
@@ -214,7 +228,9 @@ public class VmtiOverlayLayer extends VideoViewLayer {
         }
 
         void setPlatformMatched(boolean matched) {
-            showButton.setVisibility(matched ? VISIBLE : GONE);
+            // same UI-thread requirement as reset() above - start() (the only caller) can run
+            // on ATAK's background reconnect thread.
+            showButton.post(() -> showButton.setVisibility(matched ? VISIBLE : GONE));
         }
     }
 
