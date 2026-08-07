@@ -24,7 +24,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 VIDEO_PATH = sys.argv[1] if len(sys.argv) > 1 else os.path.join(SCRIPT_DIR, "sample_video.mp4")
 DETECTIONS_PATH = sys.argv[2] if len(sys.argv) > 2 else os.path.join(SCRIPT_DIR, "yolo_records.json")
 
-DETECTION_FPS = 12.0  # frame rate the detections.json records were computed at
+DETECTION_FPS = 12.0  # frame rate the detections.json based on video fps
 KLV_PUSH_INTERVAL_S = 1.0 / DETECTION_FPS  # one push per analyzed frame
 
 with open(DETECTIONS_PATH) as f:
@@ -138,12 +138,12 @@ def start_klv_http_server():
         state["pipeline"] = pipeline
         video_started = {"flag": False}
 
-        start_time = time.monotonic()
+        state["start_time"] = time.monotonic()
 
         def push_klv():
             if state["pipeline"] is not pipeline:
                 return False
-            t = time.monotonic() - start_time
+            t = time.monotonic() - state["start_time"]
             packet = build_klv_packet(t)
             buf = Gst.Buffer.new_wrapped(packet)
             buf.pts = int(t * Gst.SECOND)
@@ -179,6 +179,7 @@ def start_klv_http_server():
             if message.type == Gst.MessageType.EOS:
                 print("[klv] source file ended, seeking back to loop")
                 pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, 0)
+                state["start_time"] = time.monotonic()
             elif message.type == Gst.MessageType.ERROR:
                 err, debug = message.parse_error()
                 print(f"[klv] pipeline error: {err} {debug}")
